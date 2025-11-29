@@ -2,10 +2,19 @@
 import axios from "axios";
 
 // Prefer VITE_API_BASE_URL from .env; fallback to localhost
-const API_BASE_URL =
+function normalizeBase(url) {
+  if (!url) return "http://localhost:4060/api";
+  // Trim trailing slash
+  const trimmed = url.replace(/\/$/, "");
+  // Append /api if missing
+  return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
+}
+
+const API_BASE_URL = normalizeBase(
   import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_BASE ||
-  "http://localhost:4060/api";
+    import.meta.env.VITE_API_BASE ||
+    "http://localhost:4060"
+);
 // Legacy support: VITE_API_BASE kept as secondary fallback if present
 const api = axios.create({
   baseURL: API_BASE_URL,
