@@ -1,9 +1,12 @@
 // src/data/api/index.js
 import axios from "axios";
 
+// Prefer VITE_API_BASE_URL from .env; fallback to localhost
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE || "http://13.235.238.42:4060/api";
-// import.meta.env.VITE_API_BASE || "http://localhost:4060/api";
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_BASE ||
+  "http://localhost:4060/api";
+// Legacy support: VITE_API_BASE kept as secondary fallback if present
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
