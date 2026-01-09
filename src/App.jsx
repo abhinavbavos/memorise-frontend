@@ -10,6 +10,7 @@ import "./assets/css/style.css";
 
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
+import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
 import MainLayout, { AdminLayout, PublicLayout } from "./layout/MainLayout";
 import UserPage from "./pages/UserPage/UserPage";
 import AdminUsers from "./pages/AdminUsers/AdminUsers";
@@ -74,6 +75,7 @@ function App() {
       children: [
         { path: "login", element: <Login /> },
         { path: "register", element: <Register /> },
+        { path: "forgot-password", element: <ForgotPassword /> },
 
         // Public profile (renamed from "/:id" to avoid conflicts)
         { path: "/profile/:publicId", element: <PubUserPage /> },

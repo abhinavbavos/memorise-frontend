@@ -1,29 +1,12 @@
 // src/pages/AdminDashboard/AdminDashboard.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { SVGICON } from "../../data/constant/theme.jsx";
 import { iconBoxcard } from "../../data/constant/alldata.jsx";
-import { Link, useNavigate } from "react-router-dom";
-import { Dropdown, Spinner } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import api from "../../data/api";
 
-function DropBtnBlog() {
-  return (
-    <Dropdown className="custom-dropdown mb-0">
-      <Dropdown.Toggle
-        className="btn sharp tp-btn dark-btn i-false d-flex align-items-center justify-center"
-        as="div"
-      >
-        {SVGICON.DropDots}
-      </Dropdown.Toggle>
-      <Dropdown.Menu className="dropdown-menu-right" align="end">
-        <Dropdown.Item eventKey="Details">Details</Dropdown.Item>
-        <Dropdown.Item className="text-primary" eventKey="Cancel">
-          Cancel
-        </Dropdown.Item>
-      </Dropdown.Menu>
-    </Dropdown>
-  );
-}
+import StatCard from "../../components/Data/StatCard";
+import RecentUsersList from "../../components/Data/RecentUsersList";
+import RecentSubscriptionsList from "../../components/Data/RecentSubscriptionsList";
 
 // helper: ask backend to sign a GET for a given S3 key
 async function signGetKey(key) {
@@ -172,209 +155,81 @@ const AdminDashboard = () => {
     []
   );
 
+  const [quickSearch, setQuickSearch] = useState("");
+
+  const handleQuickSearch = (e) => {
+    e.preventDefault();
+    if (quickSearch.trim()) {
+      navigate(`/admin/users?search=${encodeURIComponent(quickSearch.trim())}`);
+    }
+  };
+
   return (
     <div className="container-fluid">
+      <div className="d-flex align-items-center justify-content-between mb-4">
+        <h3 className="mb-0">Dashboard</h3>
+        <form onSubmit={handleQuickSearch} className="d-flex">
+          <input
+            type="text"
+            className="form-control me-2"
+            placeholder="Quick User Search..."
+            value={quickSearch}
+            onChange={(e) => setQuickSearch(e.target.value)}
+            style={{ width: "250px" }}
+          />
+          <button className="btn btn-primary" type="submit">
+            <i className="fa fa-search"></i>
+          </button>
+        </form>
+      </div>
+
       <div className="row">
         {/* Total Posts */}
-        <div className="col-xl-3 col-sm-6">
-          <div className="card">
-            <div className="card-body d-flex justify-content-between">
-              <div className="card-menu">
-                <span>Total Posts</span>
-                <h2 className="mb-0">
-                  {loading ? <Spinner size="sm" /> : stats.totalPosts}
-                </h2>
-              </div>
-              <div className="icon-box icon-box-lg bg-primary-light d-flex align-items-center justify-center">
-                {iconBoxcard[0].icon}
-              </div>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Total Posts"
+          count={stats.totalPosts}
+          icon={iconBoxcard[0].icon}
+          loading={loading}
+        />
 
         {/* Total Users */}
-        <div className="col-xl-3 col-sm-6">
-          <div className="card">
-            <div className="card-body d-flex justify-content-between">
-              <div className="card-menu">
-                <span>Total Users</span>
-                <h2 className="mb-0">
-                  {loading ? <Spinner size="sm" /> : stats.totalUsers}
-                </h2>
-              </div>
-              <div className="icon-box icon-box-lg bg-primary-light d-flex align-items-center justify-center">
-                {iconBoxcard[3].icon}
-              </div>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Total Users"
+          count={stats.totalUsers}
+          icon={iconBoxcard[3].icon}
+          loading={loading}
+        />
 
-        {/* Total Revenue (sum of all succeeded payments) */}
-        <div className="col-xl-3 col-sm-6">
-          <div className="card">
-            <div className="card-body d-flex justify-content-between">
-              <div className="card-menu">
-                <span>Total Revenue</span>
-                <h2 className="mb-0">
-                  {loading ? (
-                    <Spinner size="sm" />
-                  ) : (
-                    fmtMoney(stats.totalRevenue)
-                  )}
-                </h2>
-              </div>
-              <div className="icon-box icon-box-lg bg-primary-light d-flex align-items-center justify-center">
-                {iconBoxcard[1].icon}
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Total Revenue */}
+        <StatCard
+          title="Total Revenue"
+          count={stats.totalRevenue}
+          icon={iconBoxcard[1].icon}
+          loading={loading}
+          fmt={fmtMoney}
+        />
 
-        {/* Total Subscriptions (count of succeeded payments) */}
-        <div className="col-xl-3 col-sm-6">
-          <div className="card">
-            <div className="card-body d-flex justify-content-between">
-              <div className="card-menu">
-                <span>Total Subscriptions</span>
-                <h2 className="mb-0">
-                  {loading ? <Spinner size="sm" /> : stats.totalSubscriptions}
-                </h2>
-              </div>
-              <div className="icon-box icon-box-lg bg-primary-light d-flex align-items-center justify-center">
-                {iconBoxcard[2].icon}
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Total Subscriptions */}
+        <StatCard
+          title="Total Subscriptions"
+          count={stats.totalSubscriptions}
+          icon={iconBoxcard[2].icon}
+          loading={loading}
+        />
 
         {/* Recently Joined */}
-        <div className="col-xl-6">
-          <div className="card">
-            <div className="card-header border-0 pb-0">
-              <h3 className="h-title">Recently Joined</h3>
-            </div>
-            <div className="card-body px-0 pb-0">
-              <div className="dz-scroll recent-customer">
-                {loadingLists ? (
-                  <div className="p-3 text-center">
-                    <Spinner />
-                  </div>
-                ) : recentUsers.length ? (
-                  recentUsers.map((u) => (
-                    <Link key={u._id} to={`/profile/${u.publicId || u._id}`}>
-                      <ul className="d-flex custome-list justify-between">
-                        <div className="d-flex">
-                          <li>
-                            <img
-                              src={u.avatarUrl || "/placeholder.svg"}
-                              className="avatar"
-                              alt={u.name}
-                              style={{ objectFit: "cover" }}
-                            />
-                          </li>
-                          <li className="ms-2">
-                            <h6 className="mb-0">
-                              <span className="text-dark">{u.name}</span>
-                            </h6>
-                            <p className="mb-0 text-muted small">{u.email}</p>
-                          </li>
-                        </div>
-                        <DropBtnBlog />
-                      </ul>
-                    </Link>
-                  ))
-                ) : (
-                  <div className="p-3 text-muted text-center">
-                    No recent users
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="card-footer border-0">
-              <button
-                type="button"
-                className="btn btn-primary btn-block mb-2"
-                onClick={() => navigate("/admin/users")}
-              >
-                View More
-              </button>
-            </div>
-          </div>
-        </div>
+        <RecentUsersList
+          users={recentUsers}
+          loading={loadingLists}
+          onViewMore={() => navigate("/admin/users")}
+        />
 
         {/* Recently Subscribed */}
-        <div className="col-xl-6">
-          <div className="card">
-            <div className="card-header border-0 pb-0">
-              <h3 className="h-title">Recently Subscribed</h3>
-            </div>
-            <div className="card-body px-0 pb-0">
-              <div className="dz-scroll recent-customer">
-                {loadingLists ? (
-                  <div className="p-3 text-center">
-                    <Spinner />
-                  </div>
-                ) : recentSubs.length ? (
-                  recentSubs.map((s) => (
-                    <div key={s._id}>
-                      <ul className="d-flex custome-list justify-between">
-                        <div className="d-flex">
-                          <li>
-                            <div
-                              className="avatar d-flex align-items-center justify-content-center bg-primary text-white"
-                              style={{
-                                borderRadius: "50%",
-                                width: 48,
-                                height: 48,
-                              }}
-                            >
-                              {(s.userId?.name || "?")
-                                .slice(0, 1)
-                                .toUpperCase()}
-                            </div>
-                          </li>
-                          <li className="ms-2">
-                            <h6 className="mb-0">
-                              <span className="text-dark">
-                                {s.userId?.name || "User"}
-                              </span>
-                            </h6>
-                            <p className="mb-0 text-muted small">
-                              {s.amount != null
-                                ? Number(s.amount).toLocaleString(undefined, {
-                                    style: "currency",
-                                    currency: s.currency || "USD",
-                                  })
-                                : "-"}{" "}
-                              •{" "}
-                              {s.createdAt
-                                ? new Date(s.createdAt).toLocaleDateString()
-                                : ""}
-                            </p>
-                          </li>
-                        </div>
-                        <DropBtnBlog />
-                      </ul>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-3 text-muted text-center">
-                    No recent subscriptions
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="card-footer border-0">
-              <button
-                type="button"
-                className="btn btn-primary btn-block mb-2"
-                onClick={() => navigate("/admin/payments")}
-              >
-                View Subscriptions
-              </button>
-            </div>
-          </div>
-        </div>
+        <RecentSubscriptionsList
+          subscriptions={recentSubs}
+          loading={loadingLists}
+          onViewMore={() => navigate("/admin/payments")}
+        />
       </div>
     </div>
   );

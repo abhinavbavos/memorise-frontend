@@ -67,12 +67,16 @@ const Register = () => {
         navigate("/login", { replace: true });
       }
     } catch (err) {
-      const msg =
-        err.response?.data?.error ||
-        err.response?.data?.message ||
-        err.message ||
-        "Registration failed";
-      setServerError(msg);
+      if (err.response?.status === 409) {
+        setServerError("Email is already in use. Please sign in or use another email.");
+      } else {
+        const msg =
+          err.response?.data?.error ||
+          err.response?.data?.message ||
+          err.message ||
+          "Registration failed";
+        setServerError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -177,8 +181,8 @@ const Register = () => {
                             {loading
                               ? "Creating…"
                               : isAdminCreate
-                              ? "Create Admin"
-                              : "Sign me up"}
+                                ? "Create Admin"
+                                : "Sign me up"}
                           </button>
                         </div>
                       </form>

@@ -249,16 +249,24 @@ export default function AdminSettings() {
             </div>
             <div className="col-md-4">
               <label className="form-label">Currency</label>
-              <input
-                className="form-control"
-                value={settings.premiumCurrency || "USD"}
+              <label className="form-label">Currency</label>
+              <select
+                className="form-select"
+                value={settings.premiumCurrency || "INR"}
                 onChange={(e) =>
                   setSettings((s) => ({
                     ...s,
                     premiumCurrency: e.target.value,
                   }))
                 }
-              />
+              >
+                <option value="INR">INR (₹)</option>
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="AUD">AUD (A$)</option>
+                <option value="CAD">CAD (C$)</option>
+              </select>
             </div>
             <div className="col-md-4">
               <label className="form-label">Period (months)</label>

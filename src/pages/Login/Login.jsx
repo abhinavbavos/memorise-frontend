@@ -11,6 +11,7 @@ export default function Login() {
   const [errors, setErrors] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const readJwtClaims = (token) => {
     try {
@@ -91,9 +92,9 @@ export default function Login() {
       console.error(err);
       setServerError(
         err.response?.data?.error ||
-          err.response?.data?.message ||
-          err.message ||
-          "Login failed"
+        err.response?.data?.message ||
+        err.message ||
+        "Login failed"
       );
     } finally {
       setLoading(false);
@@ -110,12 +111,12 @@ export default function Login() {
                 <div className="row h-100">
                   <div className="col-md-6 h-100">
                     <div className="img-bx">
-                      <img src={login} alt="" className="img-fluid" style={{objectFit:`contain`}}/>
+                      <img src={login} alt="" className="img-fluid" style={{ objectFit: `contain` }} />
                     </div>
                   </div>
                   <div className="col-md-6">
                     <div className="auth-form">
-                      <h4 className="main-title" style={{fontFamily:`poppins, sans-serif, sans-serif`}}>Sign in</h4>
+                      <h4 className="main-title" style={{ fontFamily: `poppins, sans-serif, sans-serif` }}>Sign in</h4>
 
                       {serverError && (
                         <div className="bg-danger text-white p-2 mb-3 rounded">
@@ -145,17 +146,39 @@ export default function Login() {
                           <label className="font-w600">
                             Password <span className="required">*</span>
                           </label>
-                          <input
-                            type="password"
-                            className="form-control solid"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                          />
+                          <div className="position-relative">
+                            <input
+                              type={showPassword ? "text" : "password"}
+                              className="form-control solid"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                            />
+                            <span
+                              className={`fa fa-fw ${showPassword ? "fa-eye-slash" : "fa-eye"} field-icon`}
+                              style={{
+                                position: "absolute",
+                                right: "10px",
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                                cursor: "pointer",
+                                color: "#ccc",
+                              }}
+                              onClick={() => setShowPassword(!showPassword)}
+                            />
+                          </div>
                           {errors.password && (
                             <div className="text-danger fs-12">
                               {errors.password}
                             </div>
                           )}
+                          <div className="d-flex justify-content-end mt-1">
+                            <Link
+                              to="/forgot-password"
+                              className="text-primary small"
+                            >
+                              Forgot Password?
+                            </Link>
+                          </div>
                         </div>
 
                         <div className="text-center">

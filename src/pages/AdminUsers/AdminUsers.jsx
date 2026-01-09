@@ -9,7 +9,7 @@ import {
   Pagination,
   Row,
 } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import api from "../../data/api";
 
 const pageSizeOptions = [10, 25, 50];
@@ -18,11 +18,12 @@ export default function AdminUsers() {
   const [dropdownOpen, setDropdownOpen] = useState(null);
 
   // filters (plan + dates filtered client-side; server gets search/page/limit/sort)
+  const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState({
     subscriptionPlan: "all",
     dateFrom: "",
     dateTo: "",
-    searchTerm: "",
+    searchTerm: searchParams.get("search") || "",
   });
 
   // paging / data
