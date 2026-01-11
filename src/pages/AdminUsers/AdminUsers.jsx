@@ -1,15 +1,6 @@
-// src/pages/AdminUsers/AdminUsers.jsx
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Button,
-  Col,
-  Form,
-  Modal,
-  Nav,
-  Pagination,
-  Row,
-} from "react-bootstrap";
 import { Link, useSearchParams } from "react-router-dom";
+import { Modal } from "react-bootstrap";
 import api from "../../data/api";
 
 const pageSizeOptions = [10, 25, 50];
@@ -73,7 +64,7 @@ export default function AdminUsers() {
           search: filters.searchTerm || "",
           page,
           limit,
-          sort, // backend supports: createdAt | name | email with optional leading '-'
+          sort,
         },
         signal: abortRef.current.signal,
       });
@@ -82,7 +73,6 @@ export default function AdminUsers() {
       setRows(list);
       setTotal(Number(data?.total || list.length || 0));
     } catch (e) {
-      // axios throws DOMException name "CanceledError" when aborted
       if (e.name !== "CanceledError") {
         setError(e?.response?.data?.error || "Failed to load users");
       }
@@ -91,28 +81,23 @@ export default function AdminUsers() {
     }
   };
 
-  // initial + when page/limit/sort change
   useEffect(() => {
     load();
-    // cleanup inflight on unmount
     return () => {
       if (abortRef.current) abortRef.current.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, limit, sort]);
 
-  // manual search submit
   const onSearch = (e) => {
     e.preventDefault();
     setPage(1);
     load();
   };
 
-  // client-side filters applied on top of server result
   const filteredRows = useMemo(() => {
     const df = filters.dateFrom ? new Date(filters.dateFrom) : null;
     const dt = filters.dateTo ? new Date(filters.dateTo) : null;
-    // make "Date To" inclusive (end of day)
     if (dt) dt.setHours(23, 59, 59, 999);
 
     return rows.filter((u) => {
@@ -131,7 +116,6 @@ export default function AdminUsers() {
     });
   }, [rows, filters]);
 
-  // export current filtered view to CSV
   const exportCSV = () => {
     const header = ["Name", "Email", "Plan", "Role", "Status", "Joined"];
     const lines = filteredRows.map((u) => [
@@ -152,7 +136,6 @@ export default function AdminUsers() {
     URL.revokeObjectURL(url);
   };
 
-  // actions
   const openEdit = (user) => {
     setEditUser({
       _id: user._id,
@@ -187,7 +170,6 @@ export default function AdminUsers() {
       if (editUser.planValidUntil)
         body.planValidUntil = new Date(editUser.planValidUntil).toISOString();
 
-      // optimistic UI
       setRows((r) =>
         r.map((u) => (u._id === editUser._id ? { ...u, ...body } : u))
       );
@@ -197,7 +179,6 @@ export default function AdminUsers() {
         body
       );
 
-      // ensure we reflect server truth (e.g., normalized fields)
       if (updated?._id) {
         setRows((r) => r.map((u) => (u._id === updated._id ? updated : u)));
       }
@@ -213,9 +194,8 @@ export default function AdminUsers() {
 
   const setStatus = async (userId, status) => {
     try {
-      // optimistic UI
       setRows((r) => r.map((u) => (u._id === userId ? { ...u, status } : u)));
-      await api.put(`/admin/users/${userId}/status`, { status }); // matches router
+      await api.put(`/admin/users/${userId}/status`, { status });
     } catch (e) {
       alert(e?.response?.data?.error || "Failed to update status");
       load();
@@ -235,333 +215,325 @@ export default function AdminUsers() {
     }
   };
 
-  // UI helpers (kept from your scaffold)
-  const drop = (index, user) => (
-    <div className="position-relative">
-      <button
-        className="btn btn-primary tp-btn-light sharp i-false"
-        onClick={() => toggleDropdown(index)}
-        style={{ background: "transparent", border: "none" }}
-        aria-expanded={dropdownOpen === index ? "true" : "false"}
-      >
-        <svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
-          <g stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
-            <rect x="0" y="0" width="24" height="24"></rect>
-            <circle fill="#000000" cx="5" cy="12" r="2"></circle>
-            <circle fill="#000000" cx="12" cy="12" r="2"></circle>
-            <circle fill="#000000" cx="19" cy="12" r="2"></circle>
-          </g>
-        </svg>
-      </button>
-      {dropdownOpen === index && (
-        <div
-          className="dropdown-menu show position-absolute"
-          style={{ right: 0, top: "100%", zIndex: 1000 }}
-        >
-          <button className="dropdown-item" onClick={() => openEdit(user)}>
-            Edit
-          </button>
-          <button
-            className="dropdown-item"
-            onClick={() =>
-              setStatus(
-                user._id,
-                user.status === "active" ? "suspended" : "active"
-              )
-            }
-          >
-            {user.status === "active" ? "Suspend" : "Activate"}
-          </button>
-          <button
-            className="dropdown-item"
-            onClick={() => setStatus(user._id, "banned")}
-          >
-            Ban
-          </button>
-          <button
-            className="dropdown-item text-danger"
-            onClick={() => removeUser(user._id)}
-          >
-            Delete
-          </button>
-        </div>
-      )}
-    </div>
-  );
-
-  // pagination component (now driven by state)
-  const PaginationBar = () => (
-    <Pagination className="pagination-gutter pagination-danger no-bg">
-      <li className="page-item page-indicator">
-        <button
-          className="page-link"
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          disabled={page <= 1}
-        >
-          <i className="la la-angle-left" />
-        </button>
-      </li>
-      {Array.from({ length: totalPages }).map((_, i) => (
-        <Pagination.Item
-          key={i + 1}
-          active={i + 1 === page}
-          onClick={() => setPage(i + 1)}
-        >
-          {i + 1}
-        </Pagination.Item>
-      ))}
-      <li className="page-item page-indicator">
-        <button
-          className="page-link"
-          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          disabled={page >= totalPages}
-        >
-          <i className="la la-angle-right" />
-        </button>
-      </li>
-    </Pagination>
-  );
-
   return (
     <Fragment>
-      <div className="container-fluid">
-        <div className="col-xl-12 d-flex align-items-center justify-content-between">
-          <h3 className="mb-3">User Management</h3>
-          <div className="d-flex gap-2">
-            <select
-              value={limit}
-              onChange={(e) => {
-                setLimit(parseInt(e.target.value, 10));
-                setPage(1);
-              }}
-              className="form-select"
-              style={{ width: 120 }}
-            >
-              {pageSizeOptions.map((n) => (
-                <option key={n} value={n}>
-                  {n} / page
-                </option>
-              ))}
-            </select>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50 p-6 font-sans text-gray-900">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 backdrop-blur-md bg-white/5 rounded-2xl p-6 border border-white/10 shadow-xl">
+            <div>
+              <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-100 via-gray-300 to-red-400">
+                User Management
+              </h1>
+              <p className="text-gray-400 mt-1">Manage all your platform users efficiently.</p>
+            </div>
 
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              className="form-select"
-              style={{ width: 170 }}
-            >
-              <option value="-createdAt">Newest</option>
-              <option value="createdAt">Oldest</option>
-              <option value="name">Name A→Z</option>
-              <option value="-name">Name Z→A</option>
-              <option value="email">Email A→Z</option>
-              <option value="-email">Email Z→A</option>
-            </select>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative group">
+                <select
+                  value={limit}
+                  onChange={(e) => {
+                    setLimit(parseInt(e.target.value, 10));
+                    setPage(1);
+                  }}
+                  className="appearance-none bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block w-full p-2.5 pr-8 hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  {pageSizeOptions.map((n) => (
+                    <option key={n} value={n} className="bg-white text-gray-900">
+                      {n} per page
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-600 group-hover:text-gray-900">
+                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                </div>
+              </div>
 
-            <button className="btn btn-outline-secondary" onClick={load}>
-              Refresh
-            </button>
+              <div className="relative group">
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                  className="appearance-none bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block w-full p-2.5 pr-8 hover:bg-gray-100 transition-colors cursor-pointer"
+                  style={{ minWidth: "160px" }}
+                >
+                  <option value="-createdAt" className="bg-white">Newest First</option>
+                  <option value="createdAt" className="bg-white">Oldest First</option>
+                  <option value="name" className="bg-white">Name (A-Z)</option>
+                  <option value="-name" className="bg-white">Name (Z-A)</option>
+                  <option value="email" className="bg-white">Email (A-Z)</option>
+                  <option value="-email" className="bg-white">Email (Z-A)</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-600 group-hover:text-gray-900">
+                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                </div>
+              </div>
+
+              <button
+                onClick={load}
+                className="p-2.5 rounded-lg bg-gray-100 text-gray-700 border border-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-all duration-300 group"
+                title="Refresh"
+              >
+                <i className="fa fa-refresh group-hover:rotate-180 transition-transform duration-500"></i>
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className="container-fluid px-0">
-          {/* Filter */}
-          <div className="row">
-            <div className="col-12">
-              <div className="card">
-                <div className="card-header">
-                  <h5 className="card-title mb-0">
-                    <i className="fa fa-filter me-2"></i>Filters
-                  </h5>
-                </div>
-                <div className="card-body">
-                  <Row className="g-3">
-                    <Col md={3}>
-                      <Form onSubmit={onSearch}>
-                        <Form.Group>
-                          <Form.Label>Search Users</Form.Label>
-                          <div className="d-flex gap-2">
-                            <Form.Control
-                              type="text"
-                              placeholder="Search by name or email..."
-                              value={filters.searchTerm}
-                              onChange={(e) =>
-                                handleFilterChange("searchTerm", e.target.value)
-                              }
-                            />
-                            <Button variant="primary" type="submit">
-                              Search
-                            </Button>
-                          </div>
-                        </Form.Group>
-                      </Form>
-                    </Col>
-                    <Col md={2}>
-                      <Form.Group>
-                        <Form.Label>Subscription Plan</Form.Label>
-                        <Form.Select
-                          value={filters.subscriptionPlan}
-                          onChange={(e) =>
-                            handleFilterChange(
-                              "subscriptionPlan",
-                              e.target.value
-                            )
-                          }
-                        >
-                          <option value="all">All Plans</option>
-                          <option value="free">Free</option>
-                          <option value="premium">Premium</option>
-                        </Form.Select>
-                      </Form.Group>
-                    </Col>
-                    <Col md={2}>
-                      <Form.Group>
-                        <Form.Label>Date From</Form.Label>
-                        <Form.Control
-                          type="date"
-                          value={filters.dateFrom}
-                          onChange={(e) =>
-                            handleFilterChange("dateFrom", e.target.value)
-                          }
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={2}>
-                      <Form.Group>
-                        <Form.Label>Date To</Form.Label>
-                        <Form.Control
-                          type="date"
-                          value={filters.dateTo}
-                          onChange={(e) =>
-                            handleFilterChange("dateTo", e.target.value)
-                          }
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={3} className="d-flex align-items-end">
-                      <div className="d-flex gap-2 w-100">
-                        <Button
-                          variant="outline-secondary"
-                          onClick={resetFilters}
-                          className="flex-fill"
-                        >
-                          <i className="fa fa-refresh me-2"></i>Reset
-                        </Button>
-                        <Button
-                          variant="primary"
-                          className="flex-fill"
-                          onClick={exportCSV}
-                        >
-                          <i className="fa fa-download me-2"></i>Export
-                        </Button>
-                      </div>
-                    </Col>
-                  </Row>
-                </div>
+          {/* Filters */}
+          <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
+            <div className="mb-4 flex items-center text-lg font-semibold text-gray-900">
+              <i className="fa fa-filter mr-2 text-red-600"></i> Filters
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4">
+              <div className="lg:col-span-4">
+                <form onSubmit={onSearch} className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={filters.searchTerm}
+                    onChange={(e) => handleFilterChange("searchTerm", e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block p-3 pr-10 placeholder-gray-500 transition-all"
+                  />
+                  <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-600 hover:text-red-600 transition-colors">
+                    <i className="fa fa-search"></i>
+                  </button>
+                </form>
+              </div>
+
+              <div className="lg:col-span-2">
+                <select
+                  value={filters.subscriptionPlan}
+                  onChange={(e) => handleFilterChange("subscriptionPlan", e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block p-3 transition-all"
+                >
+                  <option value="all" className="bg-white">All Plans</option>
+                  <option value="free" className="bg-white">Free</option>
+                  <option value="premium" className="bg-white">Premium</option>
+                </select>
+              </div>
+
+              <div className="lg:col-span-2">
+                <input
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(e) => handleFilterChange("dateFrom", e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block p-3 transition-all"
+                  style={{ colorScheme: 'light' }}
+                />
+              </div>
+
+              <div className="lg:col-span-2">
+                <input
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(e) => handleFilterChange("dateTo", e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block p-3 transition-all"
+                  style={{ colorScheme: 'light' }}
+                />
+              </div>
+
+              <div className="lg:col-span-2 flex gap-2">
+                <button
+                  onClick={resetFilters}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 font-medium rounded-lg text-sm px-4 py-2.5 transition-all duration-300 hover:shadow-md focus:outline-none"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={exportCSV}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg text-sm px-4 py-2.5 shadow-md hover:shadow-lg transition-all duration-300 focus:outline-none"
+                >
+                  Export
+                </button>
               </div>
             </div>
           </div>
 
           {/* Table */}
-          <div className="row">
-            <div className="col-lg-12">
-              <div className="card">
-                <div className="card-body">
-                  {error && (
-                    <div className="alert alert-danger mb-3">{error}</div>
-                  )}
-                  <div className="table-responsive">
-                    <table className="table mb-0 table-striped">
-                      <thead>
-                        <tr>
-                          <th>Name</th>
-                          <th>Email</th>
-                          <th>Plan</th>
-                          <th>Role</th>
-                          <th>Status</th>
-                          <th>Joined</th>
-                          <th>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody id="customers">
-                        {loading ? (
-                          <tr>
-                            <td colSpan={7} className="text-center py-4">
-                              Loading…
-                            </td>
-                          </tr>
-                        ) : filteredRows.length ? (
-                          filteredRows.map((u, index) => (
-                            <tr key={u._id} className="btn-reveal-trigger">
-                              <td className="py-3">
-                                <div className="d-flex align-items-center">
-                                  <div className="avatar avatar-xl me-2">
-                                    <img
-                                      className="rounded-circle img-fluid"
-                                      src={u.avatarUrl || "/placeholder.svg"}
-                                      width="30"
-                                      height="30"
-                                      alt={u.name}
-                                      style={{ objectFit: "cover" }}
-                                    />
-                                  </div>
-                                  <div className="media-body">
-                                    <div className="fw-semibold">{u.name}</div>
-                                    <div className="text-muted small">
-                                      <Link
-                                        to={`/profile/${u.publicId || u._id}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                      >
-                                        View public
-                                      </Link>
-                                    </div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="py-2">
-                                <a href={`mailto:${u.email}`}>{u.email}</a>
-                              </td>
-                              <td className="py-2 text-capitalize">
-                                {u.plan || "free"}
-                              </td>
-                              <td className="py-2 text-capitalize">
-                                {u.role || "user"}
-                              </td>
-                              <td className="py-2 text-capitalize">
-                                {u.status || "active"}
-                              </td>
-                              <td className="py-2">
-                                {u.createdAt
-                                  ? new Date(u.createdAt).toLocaleDateString()
-                                  : "-"}
-                              </td>
-                              <td className="py-2 text-end">
-                                {drop(index, u)}
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td
-                              colSpan={7}
-                              className="text-center py-4 text-muted"
-                            >
-                              No users found
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+            {error && (
+              <div className="bg-red-50 border-l-4 border-red-600 p-4 m-4 rounded text-red-800">
+                <p>{error}</p>
               </div>
+            )}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-gray-700">
+                <thead className="bg-gray-50 text-gray-700 uppercase text-xs font-semibold tracking-wider border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4">User</th>
+                    <th className="px-6 py-4">Email</th>
+                    <th className="px-6 py-4">Plan</th>
+                    <th className="px-6 py-4">Role</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">Joined</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-12 text-center text-gray-600 animate-pulse">
+                        <i className="fa fa-circle-o-notch fa-spin mr-2"></i> Loading users...
+                      </td>
+                    </tr>
+                  ) : filteredRows.length > 0 ? (
+                    filteredRows.map((u, index) => (
+                      <tr
+                        key={u._id}
+                        className="hover:bg-gray-50 transition-colors duration-200 group"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <img
+                              className="h-10 w-10 rounded-full object-cover ring-2 ring-gray-200 group-hover:ring-red-500 transition-all"
+                              src={u.avatarUrl || "/placeholder.svg"}
+                              alt={u.name}
+                            />
+                            <div className="ml-4">
+                              <Link
+                                to={`/profile/${u.publicId || u._id}`}
+                                target="_blank"
+                                className="text-sm font-medium text-gray-900 hover:text-red-600 hover:underline transition-colors cursor-pointer block"
+                              >
+                                {u.name}
+                              </Link>
+                              <div className="text-xs text-gray-500">
+                                <Link to={`/profile/${u.publicId || u._id}`} target="_blank" className="hover:text-red-600 transition-colors">
+                                  View Profile ↗
+                                </Link>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {u.email}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${(u.plan || 'free') === 'premium'
+                            ? 'bg-red-50 text-red-700 border-red-200'
+                            : 'bg-gray-100 text-gray-700 border-gray-300'
+                            }`}>
+                            {(u.plan || 'free').toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 capitalize">
+                          {u.role || 'user'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2.5 py-0.5 rounded text-xs font-medium border ${u.status === 'active' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                            u.status === 'banned' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                              'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                            }`}>
+                            {(u.status || 'active').toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                          {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "-"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
+                          {/* Actions Dropdown */}
+                          <div className="relative inline-block text-left">
+                            <button
+                              onClick={() => toggleDropdown(index)}
+                              className="text-gray-600 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none"
+                            >
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 13a1 1 0 100-2 1 1 0 000 2zm6 0a1 1 0 100-2 1 1 0 000 2zm-12 0a1 1 0 100-2 1 1 0 000 2z" />
+                              </svg>
+                            </button>
 
-              {/* Pagination */}
-              <div className="d-flex justify-content-center mt-3">
-                <Nav>
-                  <PaginationBar />
-                </Nav>
+                            {dropdownOpen === index && (
+                              <div className="absolute right-0 mt-2 w-48 rounded-xl shadow-lg bg-white border border-gray-200 ring-1 ring-black ring-opacity-5 z-50 overflow-hidden transform transition-all origin-top-right">
+                                <div className="py-1">
+                                  <button
+                                    onClick={() => openEdit(u)}
+                                    className="group flex w-full items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                  >
+                                    <i className="fa fa-pencil w-5 text-gray-500"></i> Edit
+                                  </button>
+                                  <button
+                                    onClick={() => setStatus(u._id, u.status === "active" ? "suspended" : "active")}
+                                    className="group flex w-full items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-yellow-50 transition-colors"
+                                  >
+                                    <i className="fa fa-ban w-5 text-yellow-600"></i> {u.status === "active" ? "Suspend" : "Activate"}
+                                  </button>
+                                  <button
+                                    onClick={() => setStatus(u._id, "banned")}
+                                    className="group flex w-full items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-red-50 transition-colors"
+                                  >
+                                    <i className="fa fa-gavel w-5 text-red-600"></i> Ban
+                                  </button>
+                                  <div className="border-t border-gray-200 my-1"></div>
+                                  <button
+                                    onClick={() => removeUser(u._id)}
+                                    className="group flex w-full items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                  >
+                                    <i className="fa fa-trash w-5"></i> Delete
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Backdrop to close dropdown */}
+                            {dropdownOpen === index && (
+                              <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(null)}></div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-12 text-center text-gray-600">
+                        No users found matching your filters.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="py-4 px-6 border-t border-gray-200 flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing page <span className="font-medium text-gray-900">{page}</span> of <span className="font-medium text-gray-900">{totalPages}</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="p-2 rounded-lg bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  <i className="la la-angle-left text-lg"></i>
+                </button>
+                {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                  let pNum = i + 1;
+                  if (page > 3 && totalPages > 5) {
+                    pNum = page - 2 + i;
+                  }
+                  if (pNum > totalPages) return null;
+
+                  return (
+                    <button
+                      key={pNum}
+                      onClick={() => setPage(pNum)}
+                      className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${pNum === page
+                        ? 'bg-red-600 text-white shadow-lg shadow-red-900/40'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                        }`}
+                    >
+                      {pNum}
+                    </button>
+                  )
+                })}
+
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                  className="p-2 rounded-lg bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  <i className="la la-angle-right text-lg"></i>
+                </button>
               </div>
             </div>
           </div>
@@ -569,184 +541,127 @@ export default function AdminUsers() {
       </div>
 
       {/* Edit Modal */}
-      <Modal show={editOpen} onHide={() => setEditOpen(false)} centered>
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title">Edit User</h5>
-            <Button
-              variant=""
-              type="button"
-              className="btn-close"
-              onClick={() => setEditOpen(false)}
-            />
-          </div>
-          <div className="modal-body">
-            {editUser && (
-              <Form>
-                <Row className="g-3">
-                  <Col md={6}>
-                    <Form.Group>
-                      <Form.Label>Name</Form.Label>
-                      <Form.Control
-                        value={editUser.name}
-                        onChange={(e) =>
-                          setEditUser((u) => ({ ...u, name: e.target.value }))
-                        }
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group>
-                      <Form.Label>Email</Form.Label>
-                      <Form.Control
-                        type="email"
-                        value={editUser.email}
-                        onChange={(e) =>
-                          setEditUser((u) => ({ ...u, email: e.target.value }))
-                        }
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={4}>
-                    <Form.Group>
-                      <Form.Label>Plan</Form.Label>
-                      <Form.Select
-                        value={editUser.plan}
-                        onChange={(e) =>
-                          setEditUser((u) => ({ ...u, plan: e.target.value }))
-                        }
-                      >
-                        <option value="free">free</option>
-                        <option value="premium">premium</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-                  <Col md={4}>
-                    <Form.Group>
-                      <Form.Label>Role</Form.Label>
-                      <Form.Select
-                        value={editUser.role}
-                        onChange={(e) =>
-                          setEditUser((u) => ({ ...u, role: e.target.value }))
-                        }
-                      >
-                        <option value="user">user</option>
-                        <option value="admin">admin</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-                  <Col md={4}>
-                    <Form.Group>
-                      <Form.Label>Status</Form.Label>
-                      <Form.Select
-                        value={editUser.status}
-                        onChange={(e) =>
-                          setEditUser((u) => ({ ...u, status: e.target.value }))
-                        }
-                      >
-                        <option value="active">active</option>
-                        <option value="suspended">suspended</option>
-                        <option value="banned">banned</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group>
-                      <Form.Label>City</Form.Label>
-                      <Form.Control
-                        value={editUser.city}
-                        onChange={(e) =>
-                          setEditUser((u) => ({ ...u, city: e.target.value }))
-                        }
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group>
-                      <Form.Label>Country</Form.Label>
-                      <Form.Control
-                        value={editUser.country}
-                        onChange={(e) =>
-                          setEditUser((u) => ({
-                            ...u,
-                            country: e.target.value,
-                          }))
-                        }
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group>
-                      <Form.Label>Plan Valid Until (optional)</Form.Label>
-                      <Form.Control
-                        type="date"
-                        value={editUser.planValidUntil}
-                        onChange={(e) =>
-                          setEditUser((u) => ({
-                            ...u,
-                            planValidUntil: e.target.value,
-                          }))
-                        }
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
-              </Form>
-            )}
-          </div>
-          <div className="modal-footer">
-            <Button variant="secondary" onClick={() => setEditOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={saveEdit} disabled={editing}>
-              {editing ? "Saving…" : "Save Changes"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      <Modal show={editOpen} onHide={() => setEditOpen(false)} centered contentClassName="bg-transparent border-0">
+        {editUser && (
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-gray-900">Edit User</h3>
+                <button onClick={() => setEditOpen(false)} className="text-gray-600 hover:text-gray-900 transition-colors">
+                  <i className="fa fa-times text-lg"></i>
+                </button>
+              </div>
 
-      {/* small dropdown CSS kept from your file */}
-      <style>{`
-        .dropdown-menu {
-          display: block;
-          min-width: 10rem;
-          padding: 0.5rem 0;
-          margin: 0;
-          font-size: 0.875rem;
-          color: #212529;
-          text-align: left;
-          list-style: none;
-          background-color: #fff;
-          background-clip: padding-box;
-          border: 1px solid rgba(0, 0, 0, 0.15);
-          border-radius: 0.375rem;
-          box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
-        }
-        .dropdown-item {
-          display: block;
-          width: 100%;
-          padding: 0.25rem 1rem;
-          clear: both;
-          font-weight: 400;
-          color: #212529;
-          text-align: inherit;
-          text-decoration: none;
-          white-space: nowrap;
-          background-color: transparent;
-          border: 0;
-        }
-        .dropdown-item:hover {
-          color: #1e2125;
-          background-color: #e9ecef;
-        }
-        .dropdown-item.text-danger {
-          color: #dc3545;
-        }
-        .dropdown-item.text-danger:hover {
-          color: #721c24;
-          background-color: #f5c6cb;
-        }
-      `}</style>
+              <form className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input
+                      type="text"
+                      value={editUser.name}
+                      onChange={(e) => setEditUser((u) => ({ ...u, name: e.target.value }))}
+                      className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={editUser.email}
+                      onChange={(e) => setEditUser((u) => ({ ...u, email: e.target.value }))}
+                      className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Plan</label>
+                    <select
+                      value={editUser.plan}
+                      onChange={(e) => setEditUser((u) => ({ ...u, plan: e.target.value }))}
+                      className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-gray-900 focus:ring-2 focus:ring-red-500 outline-none"
+                    >
+                      <option value="free" className="bg-white">Free</option>
+                      <option value="premium" className="bg-white">Premium</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <select
+                      value={editUser.role}
+                      onChange={(e) => setEditUser((u) => ({ ...u, role: e.target.value }))}
+                      className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-gray-900 focus:ring-2 focus:ring-red-500 outline-none"
+                    >
+                      <option value="user" className="bg-white">User</option>
+                      <option value="admin" className="bg-white">Admin</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select
+                      value={editUser.status}
+                      onChange={(e) => setEditUser((u) => ({ ...u, status: e.target.value }))}
+                      className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-gray-900 focus:ring-2 focus:ring-red-500 outline-none"
+                    >
+                      <option value="active" className="bg-white">Active</option>
+                      <option value="suspended" className="bg-white">Suspended</option>
+                      <option value="banned" className="bg-white">Banned</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                    <input
+                      type="text"
+                      value={editUser.city}
+                      onChange={(e) => setEditUser((u) => ({ ...u, city: e.target.value }))}
+                      className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-gray-900 focus:ring-2 focus:ring-red-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                    <input
+                      type="text"
+                      value={editUser.country}
+                      onChange={(e) => setEditUser((u) => ({ ...u, country: e.target.value }))}
+                      className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-gray-900 focus:ring-2 focus:ring-red-500 outline-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Plan Valid Until</label>
+                  <input
+                    type="date"
+                    value={editUser.planValidUntil}
+                    onChange={(e) => setEditUser((u) => ({ ...u, planValidUntil: e.target.value }))}
+                    className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-gray-900 focus:ring-2 focus:ring-red-500 outline-none"
+                    style={{ colorScheme: 'light' }}
+                  />
+                </div>
+              </form>
+
+              <div className="flex gap-3 justify-end mt-8">
+                <button
+                  onClick={() => setEditOpen(false)}
+                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 border border-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveEdit}
+                  disabled={editing}
+                  className="px-6 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {editing ? <><i className="fa fa-spinner fa-spin mr-2"></i> Saving...</> : "Save Changes"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
     </Fragment>
   );
 }

@@ -4,9 +4,9 @@
   left: 280px;
   right: 0;
   z-index: 998;
-  background: #fff;
-  border-bottom: 1px solid #e6e6e6;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .admin-header-container {
@@ -23,8 +23,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
-}
+  width: 100%;}
 
 .admin-nav-left-section {
   display: flex;
@@ -40,7 +39,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #007bff;
+  color: #dc2626;
   position: relative;
 }
 
@@ -60,7 +59,7 @@
 .admin-brand-title {
   font-size: 20px;
   font-weight: 700;
-  color: #333;
+  color: #1f2937;
 }
 
 .admin-nav-right-section {
@@ -94,10 +93,13 @@
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
 }
 
 .sideMenuToggle:hover {
-  border-color: #007bff;
+  border-color: #dc2626;
+  background: #fee2e2;
 }
 
 .sideMenuToggle:active {
@@ -114,7 +116,7 @@
 }
 
 .line {
-  background: #333;
+  background: #1f2937;
   display: block;
   height: 0.1875rem;
   border-radius: 0.1875rem;
@@ -141,7 +143,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #333;
+  color: #1f2937;
   transition: all 0.3s ease;
 }
 
@@ -155,7 +157,7 @@
 
 /* Hamburger Animation on Hover */
 .sideMenuToggle:hover .hamburger .line {
-  background: rgb(255, 118.15, 118.15);
+  background: #dc2626;
 }
 
 .sideMenuToggle:hover .hamburger .line:nth-child(1) {
@@ -175,7 +177,7 @@
 .admin-toggle-switch {
   width: 50px;
   height: 26px;
-  background: #e0e0e0;
+  background: #e5e7eb;
   border-radius: 13px;
   position: relative;
   transition: all 0.3s ease;
@@ -183,14 +185,14 @@
 }
 
 .admin-toggle-switch.admin-dark {
-  background: #4a5568;
+  background: #4b5563;
 }
 
 .admin-toggle-slider {
   width: 22px;
   height: 22px;
   background: white;
-  border-radius: 50%;
+  border-radius: 50%;;
   position: absolute;
   top: 2px;
   left: 2px;
@@ -203,31 +205,31 @@
 
 .admin-toggle-switch.admin-dark .admin-toggle-slider {
   transform: translateX(24px);
-  background: #2d3748;
-  color: #ffd700;
+  background: #374151;
+  color: #fbbf24;
 }
 
 .admin-toggle-switch.admin-light .admin-toggle-slider {
-  color: #ffa500;
+  color: #f59e0b;
 }
 
 /* Notification Icon */
 .admin-notification-icon {
   position: relative;
   padding: 8px;
-  color: #6c757d;
+  color: #6b7280;
   transition: color 0.3s ease;
 }
 
 .admin-notification-icon:hover {
-  color: #007bff;
+  color: #dc2626;
 }
 
 .admin-notification-badge {
   position: absolute;
   top: 2px;
   right: 2px;
-  background: #dc3545;
+  background: #dc2626;
   color: white;
   font-size: 10px;
   font-weight: 600;
@@ -252,18 +254,18 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #f8f9fa;
+  background: #f9fafb;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6c757d;
-  border: 2px solid #e9ecef;
+  color: #6b7280;
+  border: 2px solid #e5e7eb;
   transition: all 0.3s ease;
 }
 
 .admin-user-avatar:hover {
-  border-color: #007bff;
-  color: #007bff;
+  border-color: #dc2626;
+  color: #dc2626;
 }
 
 .admin-user-dropdown {
@@ -272,7 +274,7 @@
   right: 0;
   width: 280px;
   background: white;
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   opacity: 0;
   visibility: hidden;
@@ -280,6 +282,7 @@
   transition: all 0.3s ease;
   z-index: 1000;
   margin-top: 10px;
+  border: 1px solid #e5e7eb;
 }
 
 .admin-user-dropdown.admin-show {
@@ -290,13 +293,13 @@
 
 .admin-dropdown-card {
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .admin-dropdown-header {
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
-  border-radius: 8px 8px 0 0;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  border-radius: 12px 12px 0 0;
   padding: 12px 16px;
 }
 
@@ -310,7 +313,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #007bff;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -321,12 +324,12 @@
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: #1f2937;
 }
 
 .admin-user-profile span {
   font-size: 12px;
-  color: #6c757d;
+  color: #6b7280;
 }
 
 .admin-dropdown-body,
@@ -338,7 +341,7 @@
   display: flex;
   align-items: center;
   padding: 10px 20px;
-  color: #495057;
+  color: #4b5563;
   text-decoration: none;
   transition: all 0.3s ease;
   border: none;
@@ -347,8 +350,8 @@
 }
 
 .admin-dropdown-link:hover {
-  background: #f8f9fa;
-  color: #007bff;
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .admin-link-text {
@@ -366,20 +369,20 @@
   vertical-align: baseline;
   border-radius: 50%;
   color: #fff;
-  background-color: #007bff;
+  background-color: #dc2626;
   margin-left: 8px;
   min-width: 16px;
 }
 
 .admin-logout-btn:hover {
-  background: #fff5f5;
-  color: #dc3545;
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .admin-dropdown-footer {
-  border-top: 1px solid #e9ecef;
-  background: #f8f9fa;
-  border-radius: 0 0 8px 8px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 0 0 12px 12px;
 }
 
 /* Dark Mode Styles */

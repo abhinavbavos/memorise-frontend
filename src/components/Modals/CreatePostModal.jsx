@@ -51,6 +51,22 @@ const CreatePostModal = ({ show, onHide, onPostCreated, categories, user }) => {
             if (!postForm.file) return alert("Please choose a file or take a photo");
             if (!postForm.category) return alert("Please select a category");
 
+            // Check post limit for free users
+            const { data: userData } = await api.get("/users/me");
+            const isPremium = (userData?.plan || "").toLowerCase() === "premium";
+
+            if (!isPremium) {
+                // Count user's posts
+                const { data: postsData } = await api.get("/posts/me");
+                const postCount = Array.isArray(postsData) ? postsData.length : postsData.items?.length || 0;
+
+                if (postCount >= 10) {
+                    alert("You've reached the limit of 10 posts for free users. Upgrade to Premium to post unlimited content!");
+                    onHide();
+                    return;
+                }
+            }
+
             setIsSubmitting(true);
 
             // 1) presign

@@ -97,7 +97,7 @@ const SideBar = ({ menuToggle }) => {
               </div>
               <span className="nav-text">User Management</span>
             </NavLink>
-            {/* Submenu example */}
+            {/* Submenu example
             <ul
               className={cn(
                 "submenu",
@@ -127,7 +127,7 @@ const SideBar = ({ menuToggle }) => {
                   Add User
                 </NavLink>
               </li>
-            </ul>
+            </ul> */}
           </li>
 
           {/* Subscriptions & Payments */}

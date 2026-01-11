@@ -1,22 +1,18 @@
-// src/pages/AdminPayments/AdminPayments.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Dropdown, Modal, Button } from "react-bootstrap";
-import { iconBoxcard } from "../../data/constant/alldata";
+import { Modal } from "react-bootstrap";
 import api from "../../data/api";
 
 const pageSizeOptions = [10, 25, 50];
 
 // ----- date helpers (inclusive ranges) -----
 function toISOStartOfDay(d) {
-  // UTC start-of-day (00:00:00.000Z)
   const x = new Date(
     Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0)
   );
   return x.toISOString();
 }
 function toISOEndOfDay(d) {
-  // UTC end-of-day (23:59:59.999Z)
   const x = new Date(
     Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)
   );
@@ -43,13 +39,18 @@ function isFailed(status) {
 
 export default function AdminPayments() {
   // ---------- filters / paging ----------
-  const [preset, setPreset] = useState("all"); // all | today | week | month | custom
-  const [startDate, setStartDate] = useState(""); // ISO strings (with time)
+  const [preset, setPreset] = useState("all");
+  const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [status, setStatus] = useState("all"); // all | completed | pending | failed
+  const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [dropdownOpen, setDropdownOpen] = useState(null);
+  const [adminCurrency, setAdminCurrency] = useState(() => {
+    // Load saved currency preference from localStorage
+    return localStorage.getItem('adminCurrency') || 'USD';
+  });
 
   // ---------- data ----------
   const [loading, setLoading] = useState(true);
@@ -62,12 +63,15 @@ export default function AdminPayments() {
   const [detailItem, setDetailItem] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
 
+  const toggleDropdown = (index) =>
+    setDropdownOpen(dropdownOpen === index ? null : index);
+
+
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(total / limit)),
     [total, limit]
   );
 
-  // compute real date range from preset if needed (inclusive)
   const computedRange = useMemo(() => {
     if (preset === "custom") {
       return {
@@ -90,10 +94,9 @@ export default function AdminPayments() {
       const e = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       return { start: toISOStartOfDay(s), end: toISOEndOfDay(e) };
     }
-    return { start: "", end: "" }; // "all"
+    return { start: "", end: "" };
   }, [preset, startDate, endDate]);
 
-  // derived metrics from current page (lightweight & responsive)
   const derived = useMemo(() => {
     const completed = payments.filter((p) => isCompleted(p.status));
     const pending = payments.filter((p) => isPending(p.status));
@@ -105,7 +108,6 @@ export default function AdminPayments() {
       return sum + (isFinite(amt) ? amt : 0);
     }, 0);
 
-    // unique userIds with a completed/succeeded payment in the current view
     const uniqueActive = new Set(
       completed.map((p) => String(p.userId?._id || p.userId || ""))
     ).size;
@@ -116,14 +118,14 @@ export default function AdminPayments() {
       completedCount: completed.length,
       pendingCount: pending.length,
       failedCount: failed.length,
-      currency:
+      currency: adminCurrency, // Use admin-selected currency
+      originalCurrency:
         completed.find((p) => p.currency)?.currency ||
         payments.find((p) => p.currency)?.currency ||
         "USD",
     };
   }, [payments]);
 
-  // load payments
   const load = async () => {
     setLoading(true);
     setError("");
@@ -132,13 +134,12 @@ export default function AdminPayments() {
         page,
         limit,
         search: search || undefined,
-        // backend accepts "succeeded|pending|failed"; we map "completed" -> "succeeded"
         status:
           status === "all"
             ? undefined
             : status === "completed"
-            ? "succeeded"
-            : status,
+              ? "succeeded"
+              : status,
         startDate: computedRange.start || undefined,
         endDate: computedRange.end || undefined,
       };
@@ -154,7 +155,6 @@ export default function AdminPayments() {
     }
   };
 
-  // load recent subscriptions list (completed premium subs)
   const loadRecentSubs = async () => {
     try {
       const { data } = await api.get("/admin/subscriptions/recent", {
@@ -191,6 +191,7 @@ export default function AdminPayments() {
   };
 
   const openDetails = async (id) => {
+    setDropdownOpen(null);
     try {
       const { data } = await api.get(`/admin/payments/${id}`);
       setDetailItem(data);
@@ -201,460 +202,419 @@ export default function AdminPayments() {
   };
 
   return (
-    <div className="container-fluid">
-      <div className="col-xl-12">
-        <h3>Subscriptions & Payments</h3>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50 p-6 font-sans text-gray-900">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
+          <div>
+            <h3 className="text-3xl font-bold text-gray-900">
+              Subscriptions & Payments
+            </h3>
+            <p className="text-gray-600 mt-1">
+              Overview of revenue and transaction history.
+            </p>
+          </div>
+          <div className="flex gap-3 items-center">
+            {/* Currency Selector */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">Currency:</label>
+              <select
+                value={adminCurrency}
+                onChange={(e) => {
+                  const newCurrency = e.target.value;
+                  setAdminCurrency(newCurrency);
+                  localStorage.setItem('adminCurrency', newCurrency);
+                }}
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 p-2.5 transition-all"
+              >
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="INR">INR (₹)</option>
+                <option value="JPY">JPY (¥)</option>
+                <option value="AUD">AUD (A$)</option>
+                <option value="CAD">CAD (C$)</option>
+                <option value="CHF">CHF (Fr)</option>
+                <option value="CNY">CNY (¥)</option>
+              </select>
+            </div>
+            <button
+              onClick={load}
+              className="p-2.5 rounded-lg bg-gray-100 text-gray-700 border border-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-all duration-300 group"
+              title="Refresh"
+            >
+              <i className="fa fa-refresh group-hover:rotate-180 transition-transform duration-500"></i>
+            </button>
+          </div>
+        </div>
 
-      <div className="container-fluid px-0">
-        <div className="row h-100">
-          {/* Stats Cards (derived from current view) */}
-          <div className="col-xl-6 col-lg-12 d-flex flex-column">
-            <div className="row flex-fill">
-              <div className="col-xl-6 col-lg-3 col-md-6 col-sm-6 d-flex m-0">
-                <div className="card flex-fill">
-                  <div className="card-body d-flex align-items-center justify-content-between">
-                    <div className="card-menu">
-                      <span>Active Subscriptions (view)</span>
-                      <h2 className="mb-0">{derived.activeSubs}</h2>
-                    </div>
-                    <div className="icon-box icon-box-lg bg-primary-light d-flex align-items-center justify-content-center">
-                      {iconBoxcard[2].icon}
-                    </div>
-                  </div>
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          {/* Stats Section */}
+          <div className="xl:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Active Subs */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md relative overflow-hidden group hover:shadow-lg transition-all">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <i className="fa fa-users text-6xl text-gray-400"></i>
+              </div>
+              <div className="relative z-10">
+                <p className="text-gray-600 text-sm font-medium uppercase tracking-wider mb-1">Active Subscriptions</p>
+                <h2 className="text-3xl font-bold text-gray-900">{derived.activeSubs}</h2>
+                <div className="mt-2 text-xs text-gray-700 bg-gray-100 inline-block px-2 py-1 rounded border border-gray-200">
+                  Current View
                 </div>
               </div>
+            </div>
 
-              <div className="col-xl-6 col-lg-3 col-md-6 col-sm-6 d-flex">
-                <div className="card flex-fill">
-                  <div className="card-body d-flex align-items-center justify-content-between">
-                    <div className="card-menu">
-                      <span>Total Revenue (view)</span>
-                      <h2 className="mb-0">
-                        {derived.revenue.toLocaleString(undefined, {
-                          style: "currency",
-                          currency: derived.currency || "USD",
-                          maximumFractionDigits: 2,
-                        })}
-                      </h2>
-                    </div>
-                    <div className="icon-box icon-box-lg bg-primary-light d-flex align-items-center justify-content-center">
-                      {iconBoxcard[1].icon}
-                    </div>
-                  </div>
+            {/* Revenue */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md relative overflow-hidden group hover:shadow-lg transition-all">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <i className="fa fa-dollar text-6xl text-green-600"></i>
+              </div>
+              <div className="relative z-10">
+                <p className="text-gray-600 text-sm font-medium uppercase tracking-wider mb-1">Total Revenue</p>
+                <h2 className="text-3xl font-bold text-gray-900">
+                  {derived.revenue.toLocaleString(undefined, {
+                    style: "currency",
+                    currency: derived.currency || "USD",
+                    maximumFractionDigits: 2,
+                  })}
+                </h2>
+                <div className="mt-2 text-xs text-green-700 bg-green-50 inline-block px-2 py-1 rounded border border-green-200">
+                  Current View
                 </div>
               </div>
+            </div>
 
-              <div className="col-xl-6 col-lg-3 col-md-6 col-sm-6 d-flex">
-                <div className="card flex-fill">
-                  <div className="card-body d-flex align-items-center justify-content-between">
-                    <div className="card-menu">
-                      <span>Pending (view)</span>
-                      <h2 className="mb-0">{derived.pendingCount}</h2>
-                    </div>
-                    <div className="icon-box icon-box-lg bg-primary-light d-flex align-items-center justify-content-center">
-                      {iconBoxcard[0].icon}
-                    </div>
-                  </div>
-                </div>
+            {/* Pending */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md relative overflow-hidden group hover:shadow-lg transition-all">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <i className="fa fa-clock-o text-6xl text-yellow-600"></i>
               </div>
+              <div className="relative z-10">
+                <p className="text-gray-600 text-sm font-medium uppercase tracking-wider mb-1">Pending Payments</p>
+                <h2 className="text-3xl font-bold text-gray-900">{derived.pendingCount}</h2>
+              </div>
+            </div>
 
-              <div className="col-xl-6 col-lg-3 col-md-6 col-sm-6 d-flex">
-                <div className="card flex-fill">
-                  <div className="card-body d-flex align-items-center justify-content-between">
-                    <div className="card-menu">
-                      <span>Failed (view)</span>
-                      <h2 className="mb-0">{derived.failedCount}</h2>
-                    </div>
-                    <div className="icon-box icon-box-lg bg-primary-light d-flex align-items-center justify-content-center">
-                      {iconBoxcard[2].icon}
-                    </div>
-                  </div>
-                </div>
+            {/* Failed */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md relative overflow-hidden group hover:shadow-lg transition-all">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <i className="fa fa-times-circle text-6xl text-red-600"></i>
+              </div>
+              <div className="relative z-10">
+                <p className="text-gray-600 text-sm font-medium uppercase tracking-wider mb-1">Failed Payments</p>
+                <h2 className="text-3xl font-bold text-gray-900">{derived.failedCount}</h2>
               </div>
             </div>
           </div>
 
-          {/* Recently Subscribed */}
-          <div className="col-xl-6 col-lg-12 d-flex">
-            <div className="card flex-fill">
-              <div className="card-header border-0 pb-0">
-                <h3 className="h-title">Recently Subscribed</h3>
-              </div>
-              <div className="card-body px-0 pb-0 flex-grow-1">
-                <div
-                  className="dz-scroll recent-customer"
-                  style={{ maxHeight: "400px", overflowY: "auto" }}
-                >
-                  {recentSubs.length ? (
-                    recentSubs.map((s) => (
-                      <div key={s._id} className="px-3 py-2">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div className="d-flex align-items-center">
-                            <div>
-                              <div
-                                className="avatar rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
-                                style={{
-                                  width: 40,
-                                  height: 40,
-                                  fontWeight: 600,
-                                }}
-                              >
-                                {(s.userId?.name || "U")
-                                  .slice(0, 1)
-                                  .toUpperCase()}
-                              </div>
-                            </div>
-                            <div className="ms-3">
-                              <h6 className="mb-0">
-                                <Link to="#" className="text-decoration-none">
-                                  {s.userId?.name || "User"}
-                                </Link>
-                              </h6>
-                              <p className="mb-0 text-muted small">
-                                {s.userId?.email || "-"}
-                              </p>
-                            </div>
-                          </div>
-                          <span className="text-muted small">
-                            {s.createdAt ? formatDate(s.createdAt) : "-"}
-                          </span>
-                        </div>
+          {/* Recent Subscriptions */}
+          <div className="xl:col-span-4 bg-white rounded-2xl border border-gray-200 shadow-md flex flex-col">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Recently Subscribed</h3>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ maxHeight: "400px" }}>
+              {recentSubs.length ? (
+                recentSubs.map((s) => (
+                  <div key={s._id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all border border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-red-600 to-red-500 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                        {(s.userId?.name || "U").slice(0, 1).toUpperCase()}
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-muted px-3 py-4">
-                      No recent premium subscriptions.
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900">
+                          <Link to={`/profile/${s.userId?.publicId || s.userId?._id}`} target="_blank" className="hover:text-red-600 transition-colors">
+                            {s.userId?.name || "User"}
+                          </Link>
+                        </h4>
+                        <p className="text-xs text-gray-600">{s.userId?.email || "-"}</p>
+                      </div>
                     </div>
-                  )}
+                    <span className="text-xs text-gray-500 font-mono">
+                      {s.createdAt ? formatDate(s.createdAt) : "-"}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-600">
+                  No recent premium subscriptions.
                 </div>
-              </div>
-              <div className="card-footer border-0">
-                <Link
-                  to={`/admin/users`}
-                  className="btn btn-primary w-100 mb-2"
-                >
-                  View Users
-                </Link>
-              </div>
+              )}
+            </div>
+            <div className="p-4 border-t border-gray-200">
+              <Link to="/admin/users" className="block w-full py-2 px-4 rounded-xl bg-gray-100 text-gray-700 text-center text-sm font-medium hover:bg-red-50 hover:text-red-600 transition-all">
+                View All Users
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters Bar */}
+        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md">
+          <div className="mb-4 flex items-center text-lg font-semibold text-gray-900">
+            <i className="fa fa-filter mr-2 text-red-600"></i> Transactions
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4">
+            <div className="lg:col-span-4">
+              <form onSubmit={onSearch} className="relative">
+                <input
+                  type="text"
+                  placeholder="Search description..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block p-3 pr-10 placeholder-gray-500 transition-all"
+                />
+                <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-600 hover:text-red-600 transition-colors">
+                  <i className="fa fa-search"></i>
+                </button>
+              </form>
+            </div>
+
+            <div className="lg:col-span-2">
+              <select
+                value={preset}
+                onChange={(e) => onPreset(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block p-3 transition-all"
+              >
+                <option value="all" className="bg-white">All Dates</option>
+                <option value="today" className="bg-white">Today</option>
+                <option value="week" className="bg-white">This Week</option>
+                <option value="month" className="bg-white">This Month</option>
+                <option value="custom" className="bg-white">Custom...</option>
+              </select>
+            </div>
+
+            {preset === "custom" ? (
+              <>
+                <div className="lg:col-span-2">
+                  <input
+                    type="datetime-local"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block p-3 transition-all"
+                    style={{ colorScheme: 'light' }}
+                  />
+                </div>
+                <div className="lg:col-span-2">
+                  <input
+                    type="datetime-local"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block p-3 transition-all"
+                    style={{ colorScheme: 'light' }}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="lg:col-span-4"></div>
+            )}
+
+            <div className="lg:col-span-2">
+              <select
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block p-3 transition-all"
+              >
+                <option value="all" className="bg-white">All Statuses</option>
+                <option value="completed" className="bg-white">Completed</option>
+                <option value="pending" className="bg-white">Pending</option>
+                <option value="failed" className="bg-white">Failed</option>
+              </select>
             </div>
           </div>
         </div>
 
         {/* Payments Table */}
-        <div className="col-xl-12 col-lg-12 col-xxl-12 col-sm-12">
-          <div className="card">
-            <div className="card-header">
-              <div className="w-100 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <h4 className="card-title mb-2 mb-sm-0">
-                  Recent Payments Queue
-                </h4>
-
-                {/* search */}
-                <form className="d-flex gap-2" onSubmit={onSearch}>
-                  <input
-                    className="form-control form-control-sm"
-                    placeholder="Search description…"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    style={{ width: 240 }}
-                  />
-                  <button className="btn btn-sm btn-primary">Search</button>
-                </form>
-
-                {/* date preset */}
-                <select
-                  className="form-select form-select-sm"
-                  value={preset}
-                  onChange={(e) => onPreset(e.target.value)}
-                  style={{ width: 150 }}
-                >
-                  <option value="all">All Dates</option>
-                  <option value="today">Today</option>
-                  <option value="week">This Week</option>
-                  <option value="month">This Month</option>
-                  <option value="custom">Custom…</option>
-                </select>
-
-                {preset === "custom" && (
-                  <div className="d-flex align-items-center gap-2">
-                    <input
-                      type="datetime-local"
-                      className="form-control form-control-sm"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      style={{ width: 220 }}
-                    />
-                    <span className="text-muted">to</span>
-                    <input
-                      type="datetime-local"
-                      className="form-control form-control-sm"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      style={{ width: 220 }}
-                    />
-                  </div>
-                )}
-
-                {/* status */}
-                <select
-                  className="form-select form-select-sm"
-                  value={status}
-                  onChange={(e) => {
-                    setStatus(e.target.value);
-                    setPage(1);
-                  }}
-                  style={{ width: 150 }}
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="completed">Completed</option>
-                  <option value="pending">Pending</option>
-                  <option value="failed">Failed</option>
-                </select>
-
-                <div className="d-flex gap-2">
-                  <select
-                    value={limit}
-                    onChange={(e) => {
-                      setLimit(parseInt(e.target.value, 10));
-                      setPage(1);
-                    }}
-                    className="form-select form-select-sm"
-                    style={{ width: 120 }}
-                  >
-                    {pageSizeOptions.map((n) => (
-                      <option key={n} value={n}>
-                        {n} / page
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-600 p-4 m-4 rounded text-red-800">
+              <p>{error}</p>
             </div>
+          )}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-gray-700">
+              <thead className="bg-gray-50 text-gray-700 uppercase text-xs font-semibold tracking-wider border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-4">ID</th>
+                  <th className="px-6 py-4">User</th>
+                  <th className="px-6 py-4">Amount</th>
+                  <th className="px-6 py-4">Date</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-600 animate-pulse">
+                      <i className="fa fa-circle-o-notch fa-spin mr-2"></i> Loading payments...
+                    </td>
+                  </tr>
+                ) : payments.length > 0 ? (
+                  payments.map((p, index) => {
+                    const uid = p.userId?._id || p.userId;
+                    const amount = typeof p.amount === "number" ? p.amount : parseFloat(p.amount || 0);
+                    const currency = p.currency || "USD";
 
-            <div className="card-body">
-              {error && <div className="alert alert-danger">{error}</div>}
-              <div className="table-responsive recentOrderTable">
-                <table className="table verticle-middle table-responsive-md">
-                  <thead>
-                    <tr>
-                      <th scope="col">ID</th>
-                      <th scope="col">Name</th>
-                      <th scope="col">E-Mail</th>
-                      <th scope="col">Amount</th>
-                      <th scope="col">Date</th>
-                      <th scope="col">Status</th>
-                      <th scope="col">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      <tr>
-                        <td colSpan="7" className="text-center py-4">
-                          Loading…
+                    return (
+                      <tr key={p._id} className="hover:bg-gray-50 transition-colors duration-200">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
+                          ...{String(p._id || "").slice(-6)}
                         </td>
-                      </tr>
-                    ) : payments.length > 0 ? (
-                      payments.map((p) => {
-                        const uid = p.userId?._id || p.userId;
-                        const short = String(p._id || "").slice(-6);
-                        const badgeClass = isCompleted(p.status)
-                          ? "badge-success"
-                          : isPending(p.status)
-                          ? "badge-warning"
-                          : isFailed(p.status)
-                          ? "badge-danger"
-                          : "badge-secondary";
-                        const amount =
-                          typeof p.amount === "number"
-                            ? p.amount
-                            : parseFloat(p.amount || 0);
-                        const currency = p.currency || "USD";
-                        return (
-                          <tr key={p._id}>
-                            <td>…{short}</td>
-                            <td>{p.userId?.name || "-"}</td>
-                            <td>{p.userId?.email || "-"}</td>
-                            <td>
-                              {isFinite(amount)
-                                ? amount.toLocaleString(undefined, {
-                                    style: "currency",
-                                    currency,
-                                  })
-                                : "-"}
-                            </td>
-                            <td>
-                              {p.createdAt ? formatDate(p.createdAt) : "-"}
-                            </td>
-                            <td>
-                              <span
-                                className={`badge badge-rounded ${badgeClass}`}
-                              >
-                                {String(p.status || "").toUpperCase()}
-                              </span>
-                            </td>
-                            <td>
-                              <Dropdown className="dropdown custom-dropdown mb-0">
-                                <Dropdown.Toggle className="btn sharp btn-primary tp-btn i-false">
-                                  <svg
-                                    width="18"
-                                    height="18"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <g fill="none">
-                                      <circle
-                                        fill="#000"
-                                        cx="12"
-                                        cy="5"
-                                        r="2"
-                                      />
-                                      <circle
-                                        fill="#000"
-                                        cx="12"
-                                        cy="12"
-                                        r="2"
-                                      />
-                                      <circle
-                                        fill="#000"
-                                        cx="12"
-                                        cy="19"
-                                        r="2"
-                                      />
-                                    </g>
-                                  </svg>
-                                </Dropdown.Toggle>
-                                <Dropdown.Menu className="dropdown-menu dropdown-menu-end">
-                                  <Dropdown.Item
-                                    onClick={() => openDetails(p._id)}
-                                  >
-                                    Details
-                                  </Dropdown.Item>
-                                  <Dropdown.Item
-                                    disabled
-                                    className="text-muted"
-                                  >
-                                    Cancel (N/A)
-                                  </Dropdown.Item>
-                                  {uid && (
-                                    <Dropdown.Item
-                                      onClick={() =>
-                                        window.open(
-                                          `/profile/${
-                                            p.userId?.publicId || uid
-                                          }`,
-                                          "_blank"
-                                        )
-                                      }
-                                    >
-                                      View User
-                                    </Dropdown.Item>
-                                  )}
-                                </Dropdown.Menu>
-                              </Dropdown>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan="7" className="text-center py-4">
-                          <div className="text-muted">
-                            <svg
-                              width="48"
-                              height="48"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1"
-                              className="mb-2"
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{p.userId?.name || "-"}</div>
+                          <div className="text-xs text-gray-600">{p.userId?.email || "-"}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">
+                          {isFinite(amount)
+                            ? amount.toLocaleString(undefined, {
+                              style: "currency",
+                              currency: adminCurrency, // Use admin-selected currency
+                            })
+                            : "-"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {p.createdAt ? formatDate(p.createdAt) : "-"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2.5 py-0.5 rounded text-xs font-medium border ${isCompleted(p.status) ? 'bg-green-50 text-green-700 border-green-200' :
+                            isPending(p.status) ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                              'bg-red-50 text-red-700 border-red-200'
+                            }`}>
+                            {String(p.status || "").toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
+                          <div className="relative inline-block text-left">
+                            <button
+                              onClick={() => toggleDropdown(index)}
+                              className="text-gray-600 hover:text-red-600 p-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none"
                             >
-                              <circle cx="11" cy="11" r="8"></circle>
-                              <path d="m21 21-4.35-4.35"></path>
-                            </svg>
-                            <p className="mb-0">
-                              No payments found for the selected filters
-                            </p>
-                            <small>Try adjusting date/status/search</small>
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 13a1 1 0 100-2 1 1 0 000 2zm6 0a1 1 0 100-2 1 1 0 000 2zm-12 0a1 1 0 100-2 1 1 0 000 2z" />
+                              </svg>
+                            </button>
+
+                            {dropdownOpen === index && (
+                              <>
+                                <div className="absolute right-0 mt-2 w-48 rounded-xl shadow-2xl bg-white border border-gray-200 z-50 overflow-hidden transform transition-all origin-top-right">
+                                  <div className="py-1">
+                                    <button
+                                      onClick={() => openDetails(p._id)}
+                                      className="group flex w-full items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 hover:text-red-600 transition-colors"
+                                    >
+                                      <i className="fa fa-info-circle w-5 text-gray-600 group-hover:text-red-600"></i> Details
+                                    </button>
+                                    {uid && (
+                                      <Link
+                                        to={`/profile/${p.userId?.publicId || uid}`}
+                                        target="_blank"
+                                        className="group flex w-full items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 hover:text-red-600 transition-colors"
+                                        onClick={() => setDropdownOpen(null)}
+                                      >
+                                        <i className="fa fa-user w-5 text-gray-600 group-hover:text-red-600"></i> View User
+                                      </Link>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(null)}></div>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-indigo-300">
+                      <div className="flex flex-col items-center justify-center">
+                        <i className="fa fa-inbox text-4xl mb-3 opacity-50"></i>
+                        <p>No payments found matching your filters.</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {/* Pagination */}
+          <div className="py-4 px-6 border-t border-white/5 flex items-center justify-between">
+            <div className="text-sm text-indigo-300">
+              Showing page <span className="font-medium text-white">{page}</span> of <span className="font-medium text-white">{totalPages}</span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="p-2 rounded-lg bg-indigo-600/20 text-indigo-200 border border-indigo-500/30 hover:bg-indigo-500/30 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <i className="la la-angle-left text-lg"></i>
+              </button>
+              {/* Simplified Pagination */}
+              {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                let pNum = i + 1;
+                if (page > 3 && totalPages > 5) {
+                  pNum = page - 2 + i;
+                }
+                if (pNum > totalPages) return null;
 
-              {/* pagination */}
-              <div className="d-flex justify-content-between align-items-center mt-3">
-                <div className="text-muted small">Total: {total}</div>
-                <div className="btn-group">
+                return (
                   <button
-                    className="btn btn-outline-secondary"
-                    disabled={page <= 1}
-                    onClick={() => setPage(1)}
+                    key={pNum}
+                    onClick={() => setPage(pNum)}
+                    className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${pNum === page
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/40'
+                      : 'bg-indigo-600/10 text-indigo-300 hover:bg-indigo-600/30 hover:text-white'
+                      }`}
                   >
-                    «
+                    {pNum}
                   </button>
-                  <button
-                    className="btn btn-outline-secondary"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => p - 1)}
-                  >
-                    Prev
-                  </button>
-                  <span className="btn btn-light disabled">
-                    Page {page} / {totalPages}
-                  </span>
-                  <button
-                    className="btn btn-outline-secondary"
-                    disabled={page >= totalPages}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    Next
-                  </button>
-                  <button
-                    className="btn btn-outline-secondary"
-                    disabled={page >= totalPages}
-                    onClick={() => setPage(totalPages)}
-                  >
-                    »
-                  </button>
-                </div>
-              </div>
+                )
+              })}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="p-2 rounded-lg bg-indigo-600/20 text-indigo-200 border border-indigo-500/30 hover:bg-indigo-500/30 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <i className="la la-angle-right text-lg"></i>
+              </button>
             </div>
           </div>
         </div>
       </div>
 
       {/* Payment Details Modal */}
-      <Modal
-        show={showDetail}
-        onHide={() => setShowDetail(false)}
-        centered
-        size="lg"
-      >
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title">Payment Details</h5>
-            <Button
-              variant=""
-              type="button"
-              className="btn-close"
-              onClick={() => setShowDetail(false)}
-            />
+      <Modal show={showDetail} onHide={() => setShowDetail(false)} centered contentClassName="bg-transparent border-0" size="lg">
+        {detailItem && (
+          <div className="bg-[#1a1c2e] border border-indigo-500/30 rounded-2xl shadow-2xl overflow-hidden relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/40 to-purple-900/40 backdrop-blur-xl z-0 pointer-events-none"></div>
+            <div className="relative z-10 p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h5 className="text-xl font-bold text-white">Payment Details</h5>
+                <button onClick={() => setShowDetail(false)} className="text-indigo-400 hover:text-white transition-colors">
+                  <i className="fa fa-times text-lg"></i>
+                </button>
+              </div>
+              <div className="bg-black/30 rounded-xl p-4 overflow-auto max-h-[60vh] border border-white/5">
+                <pre className="text-sm font-mono text-indigo-200 whitespace-pre-wrap">
+                  {JSON.stringify(detailItem, null, 2)}
+                </pre>
+              </div>
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setShowDetail(false)}
+                  className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-500 shadow-lg shadow-indigo-900/50 transition-all"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="modal-body">
-            {detailItem ? (
-              <pre
-                className="bg-light p-3 rounded"
-                style={{ whiteSpace: "pre-wrap" }}
-              >
-                {JSON.stringify(detailItem, null, 2)}
-              </pre>
-            ) : (
-              <div className="text-muted">No details</div>
-            )}
-          </div>
-        </div>
+        )}
       </Modal>
     </div>
   );

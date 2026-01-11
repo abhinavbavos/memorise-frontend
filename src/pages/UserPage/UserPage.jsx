@@ -230,11 +230,8 @@ function UserPage() {
 
   // Cover handlers
   const handleCoverPhotoUploadClick = () => {
-    if ((me?.plan || "").toLowerCase() !== "premium") {
-      dispatch({ type: "subscriptionModal" });
-    } else {
-      dispatch({ type: "coverPhotoUploadModal" });
-    }
+    // Cover photo upload is now free for all users
+    dispatch({ type: "coverPhotoUploadModal" });
   };
   const handleCoverPhotoChange = (event) => {
     const file = event.target.files?.[0];
