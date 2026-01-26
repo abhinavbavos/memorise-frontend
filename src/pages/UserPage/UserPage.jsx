@@ -201,8 +201,12 @@ function UserPage() {
     try {
       await api.delete(`/posts/${trophyId}`); // Assuming /posts/:id is the endpoint
       // optimistically remove or refresh
-      setTrophies((prev) => prev.filter((t) => t._id !== trophyId));
-      setMyPosts((prev) => prev.filter((p) => p._id !== trophyId));
+      setTrophies((prev) =>
+        prev.filter((t) => (t._id || t.id || t._postId) !== trophyId)
+      );
+      setMyPosts((prev) =>
+        prev.filter((p) => (p._id || p.id || p._postId) !== trophyId)
+      );
       alert("Trophy deleted");
     } catch (e) {
       console.error(e);

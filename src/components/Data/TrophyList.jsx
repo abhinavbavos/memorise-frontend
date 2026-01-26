@@ -101,7 +101,12 @@ const TrophyList = ({
                                                         className="btn btn-sm btn-light text-danger border-0 rounded-circle p-2"
                                                         onClick={(e) => {
                                                             e.stopPropagation(); // prevent lightbox
-                                                            onDelete(item._id);
+                                                            const trophyId = item._id || item.id || item._postId;
+                                                            if (!trophyId) {
+                                                                console.warn("Trophy has no ID:", item);
+                                                                return;
+                                                            }
+                                                            onDelete(trophyId);
                                                         }}
                                                         title="Delete Trophy"
                                                     >
