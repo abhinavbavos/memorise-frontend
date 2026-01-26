@@ -1,7 +1,8 @@
 
 import React, { useState, useRef } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
-import api from "../../data/api";
+import { myPosts, presignMyPost, createPost } from "../../data/api/posts";
+import { getMyProfile } from "../../data/api/users";
 
 const CreatePostModal = ({ show, onHide, onPostCreated, categories, user }) => {
     const [postForm, setPostForm] = useState({
@@ -52,12 +53,12 @@ const CreatePostModal = ({ show, onHide, onPostCreated, categories, user }) => {
             if (!postForm.category) return alert("Please select a category");
 
             // Check post limit for free users
-            const { data: userData } = await api.get("/users/me");
+            const { data: userData } = await getMyProfile();
             const isPremium = (userData?.plan || "").toLowerCase() === "premium";
 
             if (!isPremium) {
                 // Count user's posts
-                const { data: postsData } = await api.get("/posts/me");
+                const { data: postsData } = await myPosts();
                 const postCount = Array.isArray(postsData) ? postsData.length : postsData.items?.length || 0;
 
                 if (postCount >= 10) {
@@ -70,9 +71,7 @@ const CreatePostModal = ({ show, onHide, onPostCreated, categories, user }) => {
             setIsSubmitting(true);
 
             // 1) presign
-            const { data: presign } = await api.get("/posts/me/presign", {
-                params: { contentType: postForm.file.type, size: postForm.file.size },
-            });
+            const presign = await presignMyPost(postForm.file.type, postForm.file.size);
             if (!presign?.url || !presign?.key)
                 throw new Error("Failed to get upload URL");
 
@@ -92,7 +91,7 @@ const CreatePostModal = ({ show, onHide, onPostCreated, categories, user }) => {
             }
 
             // 3) finalize create
-            await api.post("/posts", {
+            await createPost({
                 title: postForm.title || postForm.file.name,
                 description: postForm.description || "",
                 category: postForm.category,
