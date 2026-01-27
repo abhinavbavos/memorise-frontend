@@ -91,7 +91,7 @@ const CreatePostModal = ({ show, onHide, onPostCreated, categories, user }) => {
             }
 
             // 3) finalize create
-            await createPost({
+            const { data: newPost } = await createPost({
                 title: postForm.title || postForm.file.name,
                 description: postForm.description || "",
                 category: postForm.category,
@@ -104,7 +104,7 @@ const CreatePostModal = ({ show, onHide, onPostCreated, categories, user }) => {
             setPostForm({ title: "", description: "", category: "", file: null });
             setPreview(null);
             onHide();
-            if (onPostCreated) await onPostCreated();
+            if (onPostCreated) await onPostCreated(newPost);
         } catch (e) {
             console.error(e);
             alert(e?.response?.data?.error || e?.message || "Post failed");
@@ -112,6 +112,11 @@ const CreatePostModal = ({ show, onHide, onPostCreated, categories, user }) => {
             setIsSubmitting(false);
         }
     };
+
+    const missingFields = [];
+    if (!postForm.category) missingFields.push("Category");
+    if (!postForm.title) missingFields.push("Title");
+    if (!postForm.file) missingFields.push("File/Photo");
 
     return (
         <Modal
@@ -230,14 +235,21 @@ const CreatePostModal = ({ show, onHide, onPostCreated, categories, user }) => {
                             />
                         </div>
 
-                        <Button
-                            variant="primary"
-                            type="submit"
-                            disabled={isSubmitting || (!postForm.title && !postForm.file)}
-                            className="rounded-pill px-4 py-2 fw-bold"
-                        >
-                            {isSubmitting ? "Posting..." : "Post"}
-                        </Button>
+                        <div className="d-flex align-items-center gap-3">
+                            {missingFields.length > 0 && (
+                                <small className="text-danger fw-bold d-none d-sm-block">
+                                    Missing: {missingFields.join(", ")}
+                                </small>
+                            )}
+                            <Button
+                                variant="primary"
+                                type="submit"
+                                disabled={isSubmitting || missingFields.length > 0}
+                                className="rounded-pill px-4 py-2 fw-bold"
+                            >
+                                {isSubmitting ? "Posting..." : "Post"}
+                            </Button>
+                        </div>
                     </div>
                 </Form>
             </Modal.Body>

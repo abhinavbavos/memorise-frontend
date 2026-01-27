@@ -192,7 +192,13 @@ function UserPage() {
   };
 
   // call both on create
-  const handlePostCreated = async () => {
+  const handlePostCreated = async (newPost) => {
+    // Optionally append immediately for speed
+    if (newPost) {
+      setMyPosts(prev => [newPost, ...prev]);
+      setTrophies(prev => [newPost, ...prev]);
+    }
+    // Then refresh from server just within case
     await Promise.all([refreshPosts(), refreshTrophies()]);
   };
 
