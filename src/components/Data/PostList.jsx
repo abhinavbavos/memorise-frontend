@@ -11,7 +11,7 @@ const PostList = ({ user, onCameraClick, onPostModalClick }) => {
                 {/* Top row: Avatar + Input trigger */}
                 <div className="d-flex align-items-center mb-3">
                     <img
-                        src={resolveImageUrl(user?.avatarUrl) || "/placeholder.svg"}
+                        src={resolveImageUrl(user?.avatarUrl || user?.avatar || user?.thumbUrl) || "/placeholder.svg"}
                         alt="Me"
                         className="rounded-circle me-2"
                         style={{ width: 40, height: 40, objectFit: "cover" }}

@@ -80,15 +80,12 @@ function UserPage() {
 
 
   // Force the exact headers S3 needs for PUTs (SSE-S3 + Content-Type)
+  // Helper for PUT headers (just Content-Type + whatever the backend asks for)
   const s3PutHeaders = (contentType, requiredHeaders = {}) => {
-    const h = {
+    return {
       "Content-Type": contentType || "application/octet-stream",
       ...requiredHeaders,
     };
-    if (!h["x-amz-server-side-encryption"]) {
-      h["x-amz-server-side-encryption"] = "AES256";
-    }
-    return h;
   };
 
 

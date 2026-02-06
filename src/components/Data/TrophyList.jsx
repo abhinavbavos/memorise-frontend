@@ -124,14 +124,15 @@ const TrophyList = ({
                                         )}
 
                                         {/* Post Image (Clickable for Lightbox) */}
+                                        {/* Post Image (Clickable for Lightbox) */}
                                         <a
-                                            href={resolveImageUrl(item.imageUrl || item.image) || IMAGES.Profile3}
-                                            data-src={resolveImageUrl(item.imageUrl || item.image) || IMAGES.Profile3}
+                                            href={resolveImageUrl(item.fileUrl || item.thumbUrl || item.imageUrl || item.image) || IMAGES.Profile3}
+                                            data-src={resolveImageUrl(item.fileUrl || item.thumbUrl || item.imageUrl || item.image) || IMAGES.Profile3}
                                             className="gallery-item d-block rounded overflow-hidden bg-light cursor-pointer border"
                                             style={{ maxHeight: "500px", display: "flex", justifyContent: "center", alignItems: "center" }}
                                         >
                                             <img
-                                                src={resolveImageUrl(item.imageUrl || item.image) || "/placeholder.svg"}
+                                                src={resolveImageUrl(item.thumbUrl || item.fileUrl || item.imageUrl || item.image) || "/placeholder.svg"}
                                                 alt={item.title}
                                                 className="img-fluid"
                                                 style={{ objectFit: "contain", maxHeight: "500px", width: "100%" }}
