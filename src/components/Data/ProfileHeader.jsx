@@ -1,11 +1,17 @@
+import React from "react";
+import { Badge, Dropdown, Button } from "react-bootstrap";
+import { SVGICON } from "../../data/constant/theme";
+import profile from "../../assets/images/profile/profile.png";
 import { resolveImageUrl } from "../../utils/urlHelpers";
-// ... existing imports
 
 const ProfileHeader = ({
     user,
     coverUrl,
     avatarUrl,
-    // ...
+    onCoverUpload,
+    onAvatarUpload,
+    onShareProfile,
+    onSubscription,
 }) => {
     return (
         <div className="row">

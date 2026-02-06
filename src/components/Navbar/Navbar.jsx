@@ -1,8 +1,21 @@
+import React, { useEffect, useRef, useState } from "react";
+import "./Navbar.scss";
+import userimg from "../../assets/images/user.jpg";
+import logo from "../../assets/images/memrise.png";
+import { SVGICON } from "../../data/constant/theme";
+import { Link, useNavigate } from "react-router-dom";
+import api from "../../data/api";
 import { resolveImageUrl } from "../../utils/urlHelpers";
-// ... existing imports
 
 export default function Navbar() {
-  // ...
+  const [isOpen, setIsOpen] = useState(false);
+  const [me, setMe] = useState(null);
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [loadingMe, setLoadingMe] = useState(true);
+
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
+  const navigate = useNavigate();
 
   // helper: ask backend to sign a GET for a given S3 key
   const signGetKey = async (key) => {

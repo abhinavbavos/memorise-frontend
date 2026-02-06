@@ -1,5 +1,8 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Badge } from 'react-bootstrap';
+import { IMAGES } from '../../data/constant/theme';
 import { resolveImageUrl } from "../../utils/urlHelpers";
-// ... existing imports
 
 const PostList = ({ user, onCameraClick, onPostModalClick }) => {
     return (
