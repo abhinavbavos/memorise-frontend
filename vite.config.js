@@ -10,6 +10,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      "/storage": {
+        target: "https://api.memorisehub.com",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
   build: {

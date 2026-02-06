@@ -12,8 +12,8 @@ export const resolveImageUrl = (url) => {
     // If it's an external URL (not our API), return as is
     if (url.startsWith("http") || url.startsWith("https")) return url;
 
-    // If it's a relative path that already acts as a proxy route (starts with /api), use it
-    if (url.startsWith("/api")) return url;
+    // If it's a relative path that already acts as a proxy route (starts with /api or /storage)
+    if (url.startsWith("/api") || url.startsWith("/storage")) return url;
 
     // Otherwise, assume it's a relative file path (e.g. from VPS) and prepend proxy base
     return `/api/${url.replace(/^\//, "")}`;
