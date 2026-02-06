@@ -1,27 +1,15 @@
-import React, { useEffect, useRef, useState } from "react";
-import "./Navbar.scss";
-import userimg from "../../assets/images/user.jpg";
-import logo from "../../assets/images/memrise.png";
-import { SVGICON } from "../../data/constant/theme";
-import { Link, useNavigate } from "react-router-dom";
-import api from "../../data/api";
+import { resolveImageUrl } from "../../utils/urlHelpers";
+// ... existing imports
 
 export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [me, setMe] = useState(null);
-  const [avatarUrl, setAvatarUrl] = useState(null);
-  const [loadingMe, setLoadingMe] = useState(true);
-
-  const btnRef = useRef(null);
-  const menuRef = useRef(null);
-  const navigate = useNavigate();
+  // ...
 
   // helper: ask backend to sign a GET for a given S3 key
   const signGetKey = async (key) => {
     if (!key) return null;
     try {
       const { data } = await api.get("/files/sign", { params: { key } });
-      return data?.url || null;
+      return resolveImageUrl(data?.url);
     } catch {
       return null;
     }
@@ -38,11 +26,12 @@ export default function Navbar() {
 
         // prefer direct URL; otherwise sign the key
         if (data?.avatarUrl) {
-          setAvatarUrl(data.avatarUrl);
+          setAvatarUrl(resolveImageUrl(data.avatarUrl));
         } else if (data?.avatarKey) {
           const url = await signGetKey(data.avatarKey);
           if (mounted) setAvatarUrl(url);
         } else {
+          // ...
           setAvatarUrl(null);
         }
       } catch {

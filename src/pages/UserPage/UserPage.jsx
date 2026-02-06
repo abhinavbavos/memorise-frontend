@@ -97,11 +97,21 @@ function UserPage() {
 
 
   // helper to sign GET for any S3 key
+  // helper to sign GET for any S3 key
   const signGet = async (key) => {
     if (!key) return null;
     try {
       const { data } = await api.get("/files/sign", { params: { key } });
-      return data?.url || null;
+      let url = data?.url;
+      if (!url) return null;
+
+      // DEV FIX: Use Vite proxy workaround to bypass backend CORP/CORS restrictions
+      const API_DOMAIN = "https://api.memorisehub.com";
+      if (url.startsWith(API_DOMAIN)) {
+        return url.replace(API_DOMAIN, "");
+      }
+
+      return url;
     } catch {
       return null;
     }

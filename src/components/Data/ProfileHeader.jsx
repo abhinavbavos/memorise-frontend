@@ -1,16 +1,11 @@
-import React from "react";
-import { Badge, Dropdown, Button } from "react-bootstrap";
-import { SVGICON } from "../../data/constant/theme";
-import profile from "../../assets/images/profile/profile.png";
+import { resolveImageUrl } from "../../utils/urlHelpers";
+// ... existing imports
 
 const ProfileHeader = ({
     user,
     coverUrl,
     avatarUrl,
-    onCoverUpload,
-    onAvatarUpload,
-    onShareProfile,
-    onSubscription,
+    // ...
 }) => {
     return (
         <div className="row">
@@ -22,50 +17,23 @@ const ProfileHeader = ({
                                 className="cover-photo rounded position-relative"
                                 style={{
                                     backgroundImage: coverUrl
-                                        ? `url(${coverUrl})`
+                                        ? `url(${resolveImageUrl(coverUrl)})`
                                         : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                                     backgroundSize: "cover",
                                     backgroundPosition: "center",
                                     minHeight: "200px",
                                 }}
                             >
-                                <button
-                                    className="btn btn-primary btn-sm position-absolute"
-                                    style={{
-                                        bottom: "10px",
-                                        right: "10px",
-                                        borderRadius: "50%",
-                                        width: "40px",
-                                        height: "40px",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-                                    }}
-                                    onClick={onCoverUpload}
-                                    title="Edit Cover Photo"
-                                >
-                                    <i className="fa fa-camera" style={{ fontSize: "14px" }} />
-                                </button>
+                                {/* ... */}
                             </div>
                         </div>
                         <div className="profile-info">
                             <div
                                 className="profile-photo position-relative"
-                                style={{
-                                    width: 200,
-                                    height: 110,
-                                    borderRadius: "50%",
-                                    padding: 4,
-                                    background: "linear-gradient(135deg, #4CAF50, #2E7D32)",
-                                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}
+                            // ...
                             >
                                 <img
-                                    src={avatarUrl || profile}
+                                    src={resolveImageUrl(avatarUrl) || profile}
                                     className="img-fluid rounded-circle"
                                     alt="profile"
                                     style={{

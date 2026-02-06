@@ -1,8 +1,5 @@
-
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Badge } from 'react-bootstrap';
-import { IMAGES } from '../../data/constant/theme';
+import { resolveImageUrl } from "../../utils/urlHelpers";
+// ... existing imports
 
 const PostList = ({ user, onCameraClick, onPostModalClick }) => {
     return (
@@ -11,7 +8,7 @@ const PostList = ({ user, onCameraClick, onPostModalClick }) => {
                 {/* Top row: Avatar + Input trigger */}
                 <div className="d-flex align-items-center mb-3">
                     <img
-                        src={user?.avatarUrl || "/placeholder.svg"}
+                        src={resolveImageUrl(user?.avatarUrl) || "/placeholder.svg"}
                         alt="Me"
                         className="rounded-circle me-2"
                         style={{ width: 40, height: 40, objectFit: "cover" }}
@@ -21,7 +18,7 @@ const PostList = ({ user, onCameraClick, onPostModalClick }) => {
                         style={{ cursor: "pointer", fontSize: "0.95rem" }}
                         onClick={onPostModalClick}
                     >
-                        What's on your mindEstimate, {user?.name?.split(" ")[0]}?
+                        What's on your mind, {user?.name?.split(" ")[0]}?
                     </div>
                 </div>
 
