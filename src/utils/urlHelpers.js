@@ -4,28 +4,38 @@ export const resolveImageUrl = (url) => {
 
     // console.log("Resolving URL:", url);
     const API_DOMAIN = "https://api.memorisehub.com";
+    const IS_DEV = import.meta.env.DEV;
     
-    let resolvedUrl = url;
-
-    // DEV FIX: Replace absolute API domain with relative path to use Vite proxy
+    // 1. If it has the API domain
     if (url.startsWith(API_DOMAIN)) {
-        resolvedUrl = url.replace(API_DOMAIN, "");
-    }
-
-    // If it's an external URL (not our API), return as is
-    else if (url.startsWith("http") || url.startsWith("https")) {
-        // console.log("External URL:", url);
+        // DEV: Strip domain to use Vite proxy (avoids CORP/CORS issues locally)
+        if (IS_DEV) {
+            return url.replace(API_DOMAIN, "");
+        }
+        // PROD: Keep full URL (Cross-origin request to api.memorisehub.com)
         return url;
     }
 
-    // If it's a relative path that already acts as a proxy route (starts with /api or /storage)
-    else if (url.startsWith("/api") || url.startsWith("/storage")) {
-        // resolvedUrl is already correct
-    } else {
-        // Otherwise, assume it's a relative file path (e.g. from VPS) and prepend proxy base
-        resolvedUrl = `/api/${url.replace(/^\//, "")}`;
+    // 2. If it's an external URL (not our API), return as is
+    if (url.startsWith("http") || url.startsWith("https")) {
+        return url;
     }
 
-    // console.log("Resolved result:", resolvedUrl);
-    return resolvedUrl;
+    // 3. If it's a relative path that already acts as a proxy route (starts with /api or /storage)
+    if (url.startsWith("/api") || url.startsWith("/storage")) {
+        // DEV: Return as is (Vite proxies it)
+        if (IS_DEV) return url;
+        // PROD: Prepend domain (unless served from same origin, but safe to be explicit)
+        return `${API_DOMAIN}${url}`;
+    }
+
+    // 4. Otherwise, assume it's a relative file path (e.g. from VPS)
+    // DEV: /api/... (proxy)
+    // PROD: https://api.../api/...
+    const cleanPath = url.replace(/^\//, "");
+    if (IS_DEV) {
+        return `/api/${cleanPath}`;
+    } else {
+        return `${API_DOMAIN}/api/${cleanPath}`;
+    }
 };

@@ -39,12 +39,9 @@ export default function Navbar() {
 
         // prefer direct URL; otherwise sign the key
         if (data?.avatarUrl) {
-          console.log("Navbar: Setting avatarUrl directly:", data.avatarUrl);
           setAvatarUrl(resolveImageUrl(data.avatarUrl));
         } else if (data?.avatarKey) {
-          console.log("Navbar: Signing avatarKey:", data.avatarKey);
           const url = await signGetKey(data.avatarKey);
-          console.log("Navbar: Signed URL:", url);
           if (mounted) setAvatarUrl(url);
         } else {
           // ...
