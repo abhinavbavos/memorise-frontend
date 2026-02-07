@@ -16,8 +16,8 @@ export const resolveImageUrl = (url) => {
         return url;
     }
 
-    // 2. If it's an external URL (not our API), return as is
-    if (url.startsWith("http") || url.startsWith("https")) {
+    // 2. If it's an external URL (not our API) or a local data/blob URL, return as is
+    if (url.startsWith("http") || url.startsWith("https") || url.startsWith("data:") || url.startsWith("blob:")) {
         return url;
     }
 
