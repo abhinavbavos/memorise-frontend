@@ -16,6 +16,7 @@ import "lightgallery/css/lg-zoom.css";
 import "lightgallery/css/lg-thumbnail.css";
 import profile from "../../assets/images/profile/profile.png";
 import { IMAGES, SVGICON } from "../../data/constant/theme";
+import { resolveImageUrl } from "../../utils/urlHelpers";
 import api from "../../data/api";
 
 const initialState = {
@@ -147,10 +148,10 @@ export default function PubUserPage() {
     c === "Academic" || c === "Academics"
       ? "primary"
       : c === "Sports"
-      ? "danger"
-      : c === "Leadership"
-      ? "warning"
-      : "success";
+        ? "danger"
+        : c === "Leadership"
+          ? "warning"
+          : "success";
 
   const handlePostClick = (post) => {
     setSelectedPost(post);
@@ -207,7 +208,7 @@ export default function PubUserPage() {
                 className="cover-photo rounded position-relative"
                 style={{
                   backgroundImage: user?.coverUrl
-                    ? `url(${user.coverUrl})`
+                    ? `url(${resolveImageUrl(user.coverUrl)})`
                     : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                   backgroundSize: "cover",
                   backgroundPosition: "center",
@@ -241,7 +242,7 @@ export default function PubUserPage() {
             <div className="profile-info">
               <div className="profile-photo">
                 <img
-                  src={user?.avatarUrl || profile}
+                  src={resolveImageUrl(user?.avatarUrl) || profile}
                   className="img-fluid rounded-circle"
                   alt="profile"
                   style={{ width: 80, height: 80, objectFit: "cover" }}
@@ -316,14 +317,14 @@ export default function PubUserPage() {
                           </div>
 
                           <img
-                            src={post.thumbUrl || IMAGES.Profile8}
+                            src={resolveImageUrl(post.thumbUrl) || IMAGES.Profile8}
                             alt=""
                             className="img-fluid w-100 rounded mb-3"
                             style={{ cursor: "pointer" }}
                             onClick={() =>
                               handlePostClick({
                                 ...post,
-                                image: post.thumbUrl || IMAGES.Profile8,
+                                image: resolveImageUrl(post.thumbUrl) || IMAGES.Profile8,
                                 content: post.description,
                               })
                             }
@@ -336,8 +337,8 @@ export default function PubUserPage() {
                               post.category === "Sports"
                                 ? "danger"
                                 : post.category === "Internship"
-                                ? "warning"
-                                : "primary"
+                                  ? "warning"
+                                  : "primary"
                             }
                           >
                             {post.category}
@@ -365,9 +366,8 @@ export default function PubUserPage() {
                             ? getTrophyBadgeVariant(c)
                             : "outline-secondary"
                         }
-                        className={`cursor-pointer ${
-                          selectedTrophyCategory === c ? "" : "text-dark border"
-                        }`}
+                        className={`cursor-pointer ${selectedTrophyCategory === c ? "" : "text-dark border"
+                          }`}
                         onClick={() => setSelectedTrophyCategory(c)}
                       >
                         {c}
@@ -379,14 +379,14 @@ export default function PubUserPage() {
                     <LightGallery speed={500} elementClassNames="row g-3">
                       {filteredTrophies.map((t, i) => (
                         <div
-                          data-src={t.imageUrl || IMAGES.Profile3}
+                          data-src={resolveImageUrl(t.imageUrl) || IMAGES.Profile3}
                           className="col-12 col-sm-6 col-lg-4 col-xl-4"
                           key={i}
                         >
                           <div className="trophy-item position-relative">
                             <img
                               className="img-fluid rounded"
-                              src={t.imageUrl || IMAGES.Profile3}
+                              src={resolveImageUrl(t.imageUrl) || IMAGES.Profile3}
                               alt={t.title}
                               style={{ width: "100%" }}
                             />
@@ -469,7 +469,7 @@ export default function PubUserPage() {
                   </small>
                 </div>
                 <img
-                  src={selectedPost.image || "/placeholder.svg"}
+                  src={resolveImageUrl(selectedPost.image) || "/placeholder.svg"}
                   alt=""
                   className="img-fluid w-100 rounded mb-3"
                 />

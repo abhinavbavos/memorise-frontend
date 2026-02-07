@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Dropdown, Spinner } from "react-bootstrap";
 import { SVGICON } from "../../data/constant/theme";
+import { resolveImageUrl } from "../../utils/urlHelpers";
 
 function DropBtnBlog() {
     return (
@@ -42,7 +43,7 @@ const RecentUsersList = ({ users, loading, onViewMore }) => {
                                         <div className="d-flex">
                                             <li>
                                                 <img
-                                                    src={u.avatarUrl || "/placeholder.svg"}
+                                                    src={resolveImageUrl(u.avatarUrl) || "/placeholder.svg"}
                                                     className="avatar"
                                                     alt={u.name}
                                                     style={{ objectFit: "cover" }}

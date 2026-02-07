@@ -59,6 +59,18 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Handle 429 Too Many Requests
+    if (error.response.status === 429 && !original._retry429) {
+      original._retry429 = true;
+      const retryAfter = error.response.headers["retry-after"];
+      const delay = retryAfter ? parseInt(retryAfter) * 1000 : 3000; // Default 3s
+
+      console.warn(`Rate limited. Retrying in ${delay}ms...`);
+      return new Promise((resolve) =>
+        setTimeout(() => resolve(api(original)), delay)
+      );
+    }
+
     if (error.response.status === 401 && !original._retry) {
       original._retry = true;
 
