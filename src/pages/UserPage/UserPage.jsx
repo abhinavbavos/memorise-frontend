@@ -1,7 +1,7 @@
 import { Fragment, useReducer, useState, useEffect } from "react";
 import api from "../../data/api";
 import { Button, Modal, Tab, Nav } from "react-bootstrap";
-import { Link, useLocation } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import profile from "../../assets/images/profile/profile.png";
 import ProfileHeader from "../../components/Data/ProfileHeader";
 import PostList from "../../components/Data/PostList";
@@ -47,6 +47,7 @@ function UserPage() {
   const [selectedPost, setSelectedPost] = useState(null);
 
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Posts");
 
   // Cover
@@ -200,13 +201,24 @@ function UserPage() {
 
   // call both on create
   const handlePostCreated = async (newPost) => {
-    // Optionally append immediately for speed
     if (newPost) {
-      setMyPosts(prev => [newPost, ...prev]);
-      setTrophies(prev => [newPost, ...prev]);
+      // Optimistically sign the key if URL is missing
+      let optimPost = { ...newPost };
+      if (optimPost.fileKey && !optimPost.fileUrl && !optimPost.imageUrl) {
+        const signed = await signGet(optimPost.fileKey);
+        if (signed) optimPost.fileUrl = signed;
+      }
+
+      setMyPosts(prev => [optimPost, ...prev]);
+      setTrophies(prev => [optimPost, ...prev]);
     }
     // Then refresh from server just within case
-    await Promise.all([refreshPosts(), refreshTrophies()]);
+    // await Promise.all([refreshPosts(), refreshTrophies()]);
+  };
+
+  const onTabSelect = (k) => {
+    setActiveTab(k);
+    navigate(`?tab=${k}`);
   };
 
   const handleDeleteTrophy = async (trophyId) => {
@@ -491,7 +503,7 @@ function UserPage() {
                   <div className="custom-tab-1">
                     <Tab.Container
                       activeKey={activeTab}
-                      onSelect={setActiveTab}
+                      onSelect={onTabSelect}
                     >
                       <Nav
                         as="ul"
@@ -525,13 +537,6 @@ function UserPage() {
                             user={{ ...user, avatarUrl: avatarPreview || avatarUrl }}
                             onCameraClick={() => dispatch({ type: "cameraModal" })}
                             onPostModalClick={() => dispatch({ type: "postModal" })}
-                          />
-                          <CreatePostModal
-                            show={state.post}
-                            onHide={() => dispatch({ type: "postModal" })}
-                            onPostCreated={handlePostCreated}
-                            categories={categories}
-                            user={{ ...user, avatarUrl: avatarPreview || avatarUrl }}
                           />
                         </Tab.Pane>
 
@@ -957,6 +962,15 @@ function UserPage() {
         onHide={() => dispatch({ type: "cameraModal" })}
         onPostCreated={refreshPosts}
         categories={categories}
+      />
+
+      {/* Create Post Modal */}
+      <CreatePostModal
+        show={state.post}
+        onHide={() => dispatch({ type: "postModal" })}
+        onPostCreated={handlePostCreated}
+        categories={categories}
+        user={{ ...user, avatarUrl: avatarPreview || avatarUrl }}
       />
 
 

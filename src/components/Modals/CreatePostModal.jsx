@@ -115,8 +115,10 @@ const CreatePostModal = ({ show, onHide, onPostCreated, categories, user }) => {
 
     const missingFields = [];
     if (!postForm.category) missingFields.push("Category");
+    // Title not mandatory for sleek look if description exists? User logic said title/file mandatory before. 
+    // Stick to previous validation for now but make UI cleaner.
     if (!postForm.title) missingFields.push("Title");
-    if (!postForm.file) missingFields.push("File/Photo");
+    if (!postForm.file) missingFields.push("Media");
 
     return (
         <Modal
@@ -124,134 +126,160 @@ const CreatePostModal = ({ show, onHide, onPostCreated, categories, user }) => {
             onHide={onHide}
             centered
             size="lg"
-            contentClassName="border-0 shadow-lg rounded-4"
+            contentClassName="border-0 shadow rounded-4"
+            backdropClassName="bg-dark opacity-50"
         >
-            <Modal.Header closeButton className="border-0 pb-0">
-                <Modal.Title className="fw-bold text-dark w-100 text-center">Create Post</Modal.Title>
+            <Modal.Header closeButton className="border-0 px-4 pt-4 pb-0">
+                <Modal.Title className="fw-bold h5 mb-0 text-center w-100 ps-4">
+                    Create New Post
+                </Modal.Title>
             </Modal.Header>
             <Modal.Body className="p-4">
-                <div className="d-flex align-items-center mb-4">
+                <div className="d-flex mb-4">
                     <img
                         src={user?.avatarUrl || "/placeholder.svg"}
                         alt="User"
-                        className="rounded-circle me-3 border"
-                        style={{ width: 50, height: 50, objectFit: "cover" }}
+                        className="rounded-circle me-3"
+                        style={{ width: 48, height: 48, objectFit: "cover" }}
                     />
-                    <div>
-                        <h6 className="fw-bold mb-0 text-dark">{user?.name || "User"}</h6>
-                        <span className="badge bg-light text-secondary border rounded-pill">
-                            <i className="fa fa-globe me-1"></i> Public
-                        </span>
+                    <div className="flex-grow-1">
+                        <h6 className="fw-bold mb-1 text-dark">{user?.name || "User"}</h6>
+                        <Form.Select
+                            name="category"
+                            value={postForm.category}
+                            onChange={handlePostFormChange}
+                            className="form-select form-select-sm border-0 bg-light rounded-pill w-auto px-3 py-1 shadow-none"
+                            style={{ fontWeight: "600", color: "#666", cursor: "pointer" }}
+                        >
+                            <option value="">Select Category ▾</option>
+                            {categories.map((c) => (
+                                <option key={c} value={c}>{c}</option>
+                            ))}
+                        </Form.Select>
                     </div>
                 </div>
 
-                <Form onSubmit={handleCreatePost}>
-                    <Form.Select
-                        name="category"
-                        value={postForm.category}
-                        onChange={handlePostFormChange}
-                        className="form-select-sm mb-3 rounded-pill bg-light border-0 px-3 py-2 w-auto"
-                        style={{ fontWeight: "500" }}
-                        required
-                    >
-                        <option value="">Select Category</option>
-                        {categories.map((c) => (
-                            <option key={c} value={c}>{c}</option>
-                        ))}
-                    </Form.Select>
-
-                    <Form.Control
+                {/* Title & Description Area */}
+                <div className="mb-4 p-3 rounded-4" style={{ backgroundColor: "rgba(0, 0, 0, 0.02)" }}>
+                    <input
                         type="text"
                         name="title"
                         value={postForm.title}
                         onChange={handlePostFormChange}
-                        placeholder="Title of your achievement (e.g. Best Coder 2024)"
-                        className="border-0 fs-5 fw-bold mb-2 shadow-none px-0"
+                        placeholder="Give your post a title..."
+                        className="form-control border-0 fs-5 fw-bold px-0 shadow-none mb-2"
+                        style={{ backgroundColor: "transparent" }}
                     />
-
-                    <Form.Control
-                        as="textarea"
-                        rows={4}
+                    <textarea
+                        rows={3}
                         name="description"
                         value={postForm.description}
                         onChange={handlePostFormChange}
-                        placeholder="What do you want to talk about?"
-                        className="border-0 fs-6 shadow-none px-0 resize-none"
+                        placeholder="What have you achieved today?"
+                        className="form-control border-0 fs-6 px-0 shadow-none resize-none"
+                        style={{ backgroundColor: "transparent" }}
                     />
+                </div>
 
-                    {/* Media Preview or Upload Box */}
-                    <div className="mt-3">
-                        {preview ? (
-                            <div className="position-relative rounded overflow-hidden border">
-                                <img src={preview} alt="Preview" className="w-100 h-auto" style={{ maxHeight: "300px", objectFit: "contain" }} />
-                                <button
-                                    type="button"
-                                    className="btn btn-sm btn-dark position-absolute top-0 end-0 m-2 rounded-circle"
-                                    onClick={() => { setPostForm(p => ({ ...p, file: null })); setPreview(null); }}
-                                >
-                                    <i className="fa fa-times position-absolute top-50 start-50 translate-middle"></i>
-                                </button>
-                            </div>
-                        ) : (
-                            <div
-                                className="border rounded-4 bg-light p-4 text-center cursor-pointer hover-bg-gray transition-all"
-                                onClick={() => fileInputRef.current?.click()}
-                                style={{ borderStyle: "dashed !important" }}
-                            >
-                                <div className="mb-2">
-                                    <i className="fa fa-image text-secondary fs-1"></i>
-                                </div>
-                                <h6 className="fw-bold text-dark">Add a photo or video</h6>
-                                <p className="text-muted small mb-0">or drag and drop</p>
-                            </div>
-                        )}
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            name="file"
-                            onChange={handlePostFormChange}
-                            accept="image/*,video/*,application/pdf"
-                            className="d-none"
-                        />
-                    </div>
-
-                    {/* Actions */}
-                    <div className="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-                        <div className="d-flex gap-3">
-                            <i className="fa fa-image fs-4 text-success cursor-pointer" onClick={() => fileInputRef.current?.click()}></i>
-                            <i
-                                className="fa fa-camera fs-4 text-primary cursor-pointer"
-                                onClick={() => cameraInputRef.current?.click()}
-                            ></i>
-                            {/* Hidden camera input */}
-                            <input
-                                ref={cameraInputRef}
-                                type="file"
-                                accept="image/*"
-                                capture="environment"
-                                style={{ display: "none" }}
-                                onChange={handlePostFormChange}
-                                name="file"
+                {/* Media Preview Area */}
+                <div className="mb-4">
+                    {preview ? (
+                        <div className="position-relative rounded-4 overflow-hidden shadow-sm">
+                            <img
+                                src={preview}
+                                alt="Preview"
+                                className="w-100"
+                                style={{ maxHeight: "400px", objectFit: "contain", backgroundColor: "#f8f9fa" }}
                             />
-                        </div>
-
-                        <div className="d-flex align-items-center gap-3">
-                            {missingFields.length > 0 && (
-                                <small className="text-danger fw-bold d-none d-sm-block">
-                                    Missing: {missingFields.join(", ")}
-                                </small>
-                            )}
-                            <Button
-                                variant="primary"
-                                type="submit"
-                                disabled={isSubmitting || missingFields.length > 0}
-                                className="rounded-pill px-4 py-2 fw-bold"
+                            <button
+                                type="button"
+                                className="btn btn-dark btn-sm position-absolute top-0 end-0 m-3 rounded-circle shadow"
+                                style={{ width: 32, height: 32, padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
+                                onClick={() => { setPostForm(p => ({ ...p, file: null })); setPreview(null); }}
                             >
-                                {isSubmitting ? "Posting..." : "Post"}
-                            </Button>
+                                <i className="fa fa-times"></i>
+                            </button>
                         </div>
+                    ) : (
+                        <div
+                            className="border rounded-4 p-5 text-center cursor-pointer transition-all"
+                            onClick={() => fileInputRef.current?.click()}
+                            style={{
+                                borderStyle: "dashed",
+                                borderColor: "#e0e0e0",
+                                backgroundColor: "#fafafa"
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#f0f2f5"}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#fafafa"}
+                        >
+                            <div className="mb-3 p-3 d-inline-block rounded-circle bg-light text-primary">
+                                <i className="fa fa-cloud-upload fs-3"></i>
+                            </div>
+                            <h6 className="fw-bold text-dark mb-1">Add Photos/Videos</h6>
+                            <p className="text-muted small mb-0">or drag and drop</p>
+                        </div>
+                    )}
+                </div>
+
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    name="file"
+                    onChange={handlePostFormChange}
+                    accept="image/*,video/*,application/pdf"
+                    className="d-none"
+                />
+                <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    style={{ display: "none" }}
+                    onChange={handlePostFormChange}
+                    name="file"
+                />
+
+                {/* Footer Actions */}
+                <div className="d-flex align-items-center justify-content-between pt-3 border-top">
+                    <div className="d-flex align-items-center gap-2">
+                        <button
+                            type="button"
+                            className="btn btn-light rounded-circle text-success d-flex align-items-center justify-content-center p-0"
+                            style={{ width: 42, height: 42, transition: "0.2s" }}
+                            onClick={() => fileInputRef.current?.click()}
+                            title="Add Photo"
+                        >
+                            <i className="fa fa-image fs-5"></i>
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-light rounded-circle text-primary d-flex align-items-center justify-content-center p-0"
+                            style={{ width: 42, height: 42, transition: "0.2s" }}
+                            onClick={() => cameraInputRef.current?.click()}
+                            title="Take Photo"
+                        >
+                            <i className="fa fa-camera fs-5"></i>
+                        </button>
                     </div>
-                </Form>
+
+                    <div className="d-flex align-items-center gap-3">
+                        {missingFields.length > 0 && (
+                            <span className="text-danger small fw-bold">
+                                {missingFields.join(", ")} required
+                            </span>
+                        )}
+                        <Button
+                            variant="primary"
+                            type="submit"
+                            onClick={handleCreatePost}
+                            disabled={isSubmitting || missingFields.length > 0}
+                            className="rounded-pill px-4 fw-bold"
+                            style={{ minWidth: "120px" }}
+                        >
+                            {isSubmitting ? "Posting..." : "Post"}
+                        </Button>
+                    </div>
+                </div>
             </Modal.Body>
         </Modal>
     );

@@ -30,7 +30,28 @@ const ProfileHeader = ({
                                     minHeight: "200px",
                                 }}
                             >
-                                {/* ... */}
+                                {/* Change Cover Button */}
+                                <button
+                                    className="btn btn-primary position-absolute"
+                                    style={{
+                                        bottom: "10px",
+                                        right: "10px",
+                                        borderRadius: "20px",
+                                        padding: "5px 15px",
+                                        fontSize: "0.85rem",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "5px",
+                                        background: "rgba(0,0,0,0.6)",
+                                        border: "1px solid rgba(255,255,255,0.3)",
+                                        backdropFilter: "blur(4px)",
+                                        color: "white",
+                                        transition: "all 0.2s ease"
+                                    }}
+                                    onClick={onCoverUpload}
+                                >
+                                    <i className="fa fa-camera"></i> Change Cover
+                                </button>
                             </div>
                         </div>
                         <div className="profile-info">
