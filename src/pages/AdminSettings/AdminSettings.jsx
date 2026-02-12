@@ -2,10 +2,13 @@
 import { useEffect, useRef, useState } from "react";
 import api from "../../data/api";
 
+import { resolveImageUrl } from "../../utils/urlHelpers";
+
 export default function AdminSettings() {
   const [me, setMe] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  // ... (rest of state items are unchanged, just importing resolveImageUrl at top and replacing src below)
 
   const [settings, setSettings] = useState({
     siteName: "",
@@ -169,7 +172,7 @@ export default function AdminSettings() {
         </div>
         <div className="card-body d-flex align-items-center gap-3">
           <img
-            src={avatarUrl || "/placeholder.svg"}
+            src={resolveImageUrl(avatarUrl) || "/placeholder.svg"}
             alt="avatar"
             style={{
               width: 84,

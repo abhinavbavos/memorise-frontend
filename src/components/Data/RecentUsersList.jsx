@@ -4,7 +4,7 @@ import { Dropdown, Spinner } from "react-bootstrap";
 import { SVGICON } from "../../data/constant/theme";
 import { resolveImageUrl } from "../../utils/urlHelpers";
 
-function DropBtnBlog() {
+function DropBtnBlog({ user }) {
     return (
         <Dropdown className="custom-dropdown mb-0">
             <Dropdown.Toggle
@@ -14,7 +14,13 @@ function DropBtnBlog() {
                 {SVGICON.DropDots}
             </Dropdown.Toggle>
             <Dropdown.Menu className="dropdown-menu-right" align="end">
-                <Dropdown.Item eventKey="Details">Details</Dropdown.Item>
+                <Dropdown.Item
+                    as={Link}
+                    to={`/admin/users?search=${encodeURIComponent(user?.email || "")}`}
+                    eventKey="Details"
+                >
+                    Details
+                </Dropdown.Item>
                 <Dropdown.Item className="text-primary" eventKey="Cancel">
                     Cancel
                 </Dropdown.Item>
@@ -38,27 +44,27 @@ const RecentUsersList = ({ users, loading, onViewMore }) => {
                             </div>
                         ) : users.length ? (
                             users.map((u) => (
-                                <Link key={u._id} to={`/profile/${u.publicId || u._id}`}>
-                                    <ul className="d-flex custome-list justify-between">
-                                        <div className="d-flex">
-                                            <li>
-                                                <img
-                                                    src={resolveImageUrl(u.avatarUrl) || "/placeholder.svg"}
-                                                    className="avatar"
-                                                    alt={u.name}
-                                                    style={{ objectFit: "cover" }}
-                                                />
-                                            </li>
-                                            <li className="ms-2">
+                                <div key={u._id} className="d-flex custome-list justify-between align-items-center mb-3">
+                                    <Link to={`/profile/${u.publicId || u._id}`} className="d-flex align-items-center w-100 text-decoration-none">
+                                        <div className="d-flex align-items-center">
+                                            <img
+                                                src={resolveImageUrl(u.avatarUrl) || "/placeholder.svg"}
+                                                className="avatar"
+                                                alt={u.name}
+                                                style={{ objectFit: "cover" }}
+                                            />
+                                            <div className="ms-2">
                                                 <h6 className="mb-0">
                                                     <span className="text-dark">{u.name}</span>
                                                 </h6>
                                                 <p className="mb-0 text-muted small">{u.email}</p>
-                                            </li>
+                                            </div>
                                         </div>
-                                        <DropBtnBlog />
-                                    </ul>
-                                </Link>
+                                    </Link>
+                                    <div className="ms-auto">
+                                        <DropBtnBlog user={u} />
+                                    </div>
+                                </div>
                             ))
                         ) : (
                             <div className="p-3 text-muted text-center">No recent users</div>

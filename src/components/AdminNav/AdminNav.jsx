@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { resolveImageUrl } from "../../utils/urlHelpers";
 import "./AdminNav.css";
 import api from "../../data/api";
 
 const AdminNav = ({ setMenuToggle, menuToggle }) => {
   const [userMenu, setUserMenu] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(
-    () => localStorage.getItem("adm_theme") === "dark"
-  );
+
   const [me, setMe] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(null);
 
@@ -78,31 +77,26 @@ const AdminNav = ({ setMenuToggle, menuToggle }) => {
     };
   }, [userMenu]);
 
-  // --- theme toggle (persist) ---
-  useEffect(() => {
-    if (isDarkMode) document.documentElement.classList.add("dark-mode");
-    else document.documentElement.classList.remove("dark-mode");
-    localStorage.setItem("adm_theme", isDarkMode ? "dark" : "light");
-  }, [isDarkMode]);
 
-  const toggleDarkMode = () => setIsDarkMode((s) => !s);
 
   const doLogout = async () => {
     try {
       await api.post("/auth/logout"); // ok if 404; we still clear locally
-    } catch {}
+      // eslint-disable-next-line no-empty
+    } catch { }
     try {
       localStorage.removeItem("token");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
       delete api.defaults.headers.common.Authorization;
-    } catch {}
+      // eslint-disable-next-line no-empty
+    } catch { }
     navigate("/login", { replace: true });
   };
 
   const displayName = me?.name || "Admin User";
   const subtitle = me?.email || "System Administrator";
-  const avatarSrc = avatarUrl || undefined;
+  const avatarSrc = resolveImageUrl(avatarUrl) || undefined;
 
   return (
     <div className="admin-header-wrapper">
@@ -131,100 +125,7 @@ const AdminNav = ({ setMenuToggle, menuToggle }) => {
 
             <div className="admin-nav-right-section">
               <ul className="admin-nav-items">
-                {/* Theme toggle */}
-                <li className="admin-nav-item">
-                  <button
-                    type="button"
-                    className="admin-theme-toggle"
-                    onClick={toggleDarkMode}
-                    aria-label="Toggle theme"
-                  >
-                    <div
-                      className={`admin-toggle-switch ${
-                        isDarkMode ? "admin-dark" : "admin-light"
-                      }`}
-                    >
-                      <div className="admin-toggle-slider">
-                        {isDarkMode ? (
-                          <svg width="16" height="16" viewBox="0 0 24 24">
-                            <path
-                              d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
-                              fill="currentColor"
-                            />
-                          </svg>
-                        ) : (
-                          <svg width="16" height="16" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="5" fill="currentColor" />
-                            <line
-                              x1="12"
-                              y1="1"
-                              x2="12"
-                              y2="3"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            />
-                            <line
-                              x1="12"
-                              y1="21"
-                              x2="12"
-                              y2="23"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            />
-                            <line
-                              x1="4.22"
-                              y1="4.22"
-                              x2="5.64"
-                              y2="5.64"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            />
-                            <line
-                              x1="18.36"
-                              y1="18.36"
-                              x2="19.78"
-                              y2="19.78"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            />
-                            <line
-                              x1="1"
-                              y1="12"
-                              x2="3"
-                              y2="12"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            />
-                            <line
-                              x1="21"
-                              y1="12"
-                              x2="23"
-                              y2="12"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            />
-                            <line
-                              x1="4.22"
-                              y1="19.78"
-                              x2="5.64"
-                              y2="18.36"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            />
-                            <line
-                              x1="18.36"
-                              y1="5.64"
-                              x2="19.78"
-                              y2="4.22"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                </li>
+
 
                 {/* User menu */}
                 <li className="admin-nav-item">
@@ -269,9 +170,8 @@ const AdminNav = ({ setMenuToggle, menuToggle }) => {
 
                   <div
                     ref={menuRef}
-                    className={`admin-user-dropdown ${
-                      userMenu ? "admin-show" : ""
-                    }`}
+                    className={`admin-user-dropdown ${userMenu ? "admin-show" : ""
+                      }`}
                     role="menu"
                   >
                     <div className="admin-dropdown-card">

@@ -193,6 +193,7 @@ export default function AdminUsers() {
   };
 
   const setStatus = async (userId, status) => {
+    setDropdownOpen(null);
     try {
       setRows((r) => r.map((u) => (u._id === userId ? { ...u, status } : u)));
       await api.put(`/admin/users/${userId}/status`, { status });
@@ -205,6 +206,7 @@ export default function AdminUsers() {
   const removeUser = async (userId) => {
     const ok = window.confirm("Delete this user? This cannot be undone.");
     if (!ok) return;
+    setDropdownOpen(null);
     try {
       setRows((r) => r.filter((u) => u._id !== userId));
       setTotal((t) => Math.max(0, t - 1));
@@ -222,7 +224,7 @@ export default function AdminUsers() {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 backdrop-blur-md bg-white/5 rounded-2xl p-6 border border-white/10 shadow-xl">
             <div>
-              <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-100 via-gray-300 to-red-400">
+              <h1 className="text-3xl font-bold text-black">
                 User Management
               </h1>
               <p className="text-gray-400 mt-1">Manage all your platform users efficiently.</p>
