@@ -9,6 +9,7 @@ import TrophyList from "../../components/Data/TrophyList";
 import ProfileSettings from "../../components/Data/ProfileSettings";
 import CameraModal from "../../components/Modals/CameraModal";
 import CreatePostModal from "../../components/Modals/CreatePostModal";
+import { resolveImageUrl } from "../../utils/urlHelpers";
 
 const initialState = {
   sendMessage: false,
@@ -105,7 +106,7 @@ function UserPage() {
 
       // DEV FIX: Use Vite proxy workaround to bypass backend CORP/CORS restrictions
       const API_DOMAIN = "https://api.memorisehub.com";
-      if (url.startsWith(API_DOMAIN)) {
+      if (import.meta.env.DEV && url.startsWith(API_DOMAIN)) {
         return url.replace(API_DOMAIN, "");
       }
 
@@ -770,7 +771,7 @@ function UserPage() {
               <div className="mb-3">
                 <label className="form-label">Preview:</label>
                 <img
-                  src={coverPhotoPreview || "/placeholder.svg"}
+                  src={resolveImageUrl(coverPhotoPreview) || "/placeholder.svg"}
                   alt="Cover preview"
                   className="img-fluid rounded"
                   style={{
@@ -820,7 +821,7 @@ function UserPage() {
           <div className="modal-body">
             <div className="d-flex align-items-center gap-3 mb-3">
               <img
-                src={avatarPreview || avatarUrl || profile}
+                src={resolveImageUrl(avatarPreview || avatarUrl) || profile}
                 alt="preview"
                 className="rounded-circle"
                 style={{ width: 96, height: 96, objectFit: "cover" }}

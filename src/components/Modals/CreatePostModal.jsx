@@ -3,6 +3,7 @@ import React, { useState, useRef } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 import { myPosts, presignMyPost, createPost } from "../../data/api/posts";
 import { getMyProfile } from "../../data/api/users";
+import { resolveImageUrl } from "../../utils/urlHelpers";
 
 const CreatePostModal = ({ show, onHide, onPostCreated, categories, user }) => {
     const [postForm, setPostForm] = useState({
@@ -137,7 +138,7 @@ const CreatePostModal = ({ show, onHide, onPostCreated, categories, user }) => {
             <Modal.Body className="p-4">
                 <div className="d-flex mb-4">
                     <img
-                        src={user?.avatarUrl || "/placeholder.svg"}
+                        src={resolveImageUrl(user?.avatarUrl) || "/placeholder.svg"}
                         alt="User"
                         className="rounded-circle me-3"
                         style={{ width: 48, height: 48, objectFit: "cover" }}
