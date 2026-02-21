@@ -161,25 +161,34 @@ const CreatePostModal = ({ show, onHide, onPostCreated, categories, user }) => {
                 </div>
 
                 {/* Title & Description Area */}
-                <div className="mb-4 p-3 rounded-4" style={{ backgroundColor: "rgba(0, 0, 0, 0.02)" }}>
-                    <input
-                        type="text"
-                        name="title"
-                        value={postForm.title}
-                        onChange={handlePostFormChange}
-                        placeholder="Give your post a title..."
-                        className="form-control border-0 fs-5 fw-bold px-0 shadow-none mb-2"
-                        style={{ backgroundColor: "transparent" }}
-                    />
-                    <textarea
-                        rows={3}
-                        name="description"
-                        value={postForm.description}
-                        onChange={handlePostFormChange}
-                        placeholder="What have you achieved today?"
-                        className="form-control border-0 fs-6 px-0 shadow-none resize-none"
-                        style={{ backgroundColor: "transparent" }}
-                    />
+                <div className="mb-3">
+                    <label className="form-label fw-bold small text-muted text-uppercase mb-1 ms-1">Title</label>
+                    <div className="p-2 rounded-3 border bg-light shadow-sm">
+                        <input
+                            type="text"
+                            name="title"
+                            value={postForm.title}
+                            onChange={handlePostFormChange}
+                            placeholder="Give your post a title..."
+                            className="form-control border-0 fs-6 fw-bold shadow-none"
+                            style={{ backgroundColor: "transparent" }}
+                        />
+                    </div>
+                </div>
+
+                <div className="mb-4">
+                    <label className="form-label fw-bold small text-muted text-uppercase mb-1 ms-1">Description</label>
+                    <div className="p-2 rounded-3 border bg-light shadow-sm">
+                        <textarea
+                            rows={3}
+                            name="description"
+                            value={postForm.description}
+                            onChange={handlePostFormChange}
+                            placeholder="What have you achieved today?"
+                            className="form-control border-0 fs-6 shadow-none resize-none"
+                            style={{ backgroundColor: "transparent" }}
+                        />
+                    </div>
                 </div>
 
                 {/* Media Preview Area */}

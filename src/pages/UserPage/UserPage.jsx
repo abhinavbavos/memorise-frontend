@@ -437,7 +437,6 @@ function UserPage() {
   // Derived UI model
   const user = {
     name: me?.name || "Your Name",
-    desig: "Freelancer",
     age: me?.age ?? "",
     email: me?.email || "",
     location: {

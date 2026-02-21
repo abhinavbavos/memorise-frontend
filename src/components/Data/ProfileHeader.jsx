@@ -96,38 +96,34 @@ const ProfileHeader = ({
                                     />
                                 </button>
                             </div>
-                            <div className="profile-details">
-                                <div className="profile-name px-3 pt-2">
-                                    <h4 className="text-primary mb-0">{user?.name}</h4>
-                                    <p>{user?.desig}</p>
-                                </div>
-                                <div className="profile-email px-2 pt-2">
-                                    <h4 className="text-muted mb-0">{user?.email}</h4>
-                                    <p>Email</p>
-                                </div>
-                                <div className="bootstrap-badge" style={{ height: `35px` }}>
+                            <div className="profile-details d-flex align-items-center flex-wrap gap-4 ps-4 pt-3 w-100">
+                                <div className="d-flex align-items-center flex-wrap gap-3">
+                                    <h4 className="text-primary mb-0 font-w600">{user?.name}</h4>
+                                    <span className="text-muted fs-14">{user?.email}</span>
                                     <Badge
                                         as="span"
                                         bg="badge-rounded"
                                         className="badge-outline-dark"
                                         style={{
-                                            height: `35px`,
+                                            padding: "0.4rem 0.8rem",
                                             display: `flex`,
                                             alignItems: `center`,
                                             borderRadius: `0.75em`,
+                                            fontSize: "0.75rem",
+                                            fontWeight: "600"
                                         }}
                                     >
                                         {user?.plan}
                                     </Badge>
                                 </div>
-                                <Dropdown className="dropdown ms-auto flex justify-center gap-1">
-                                    <button className="sendbtn sharp" onClick={onShareProfile}>
+                                <Dropdown className="dropdown ms-auto d-flex align-items-center gap-2">
+                                    <button className="sendbtn sharp shadow-sm" onClick={onShareProfile}>
                                         {SVGICON.Send}
                                     </button>
                                     {user?.plan !== "Premium" && (
                                         <Button
                                             size="sm"
-                                            className="ms-2"
+                                            className="ms-2 px-3 rounded-pill fw-bold"
                                             onClick={onSubscription}
                                         >
                                             Upgrade
