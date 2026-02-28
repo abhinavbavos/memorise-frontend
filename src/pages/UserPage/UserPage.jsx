@@ -76,6 +76,7 @@ function UserPage() {
   ]);
 
   const [upgrading, setUpgrading] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
   const onInit = () => { };
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -898,7 +899,10 @@ function UserPage() {
       <Modal
         className="modal fade"
         show={state.shareProfile}
-        onHide={() => dispatch({ type: "shareProfileModal" })}
+        onHide={() => {
+          dispatch({ type: "shareProfileModal" });
+          setCopiedUrl(false);
+        }}
         centered
       >
         <div className="modal-content">
@@ -908,7 +912,10 @@ function UserPage() {
               variant=""
               type="button"
               className="btn-close"
-              onClick={() => dispatch({ type: "shareProfileModal" })}
+              onClick={() => {
+                dispatch({ type: "shareProfileModal" });
+                setCopiedUrl(false);
+              }}
             ></Button>
           </div>
           <div className="modal-body">
@@ -918,38 +925,134 @@ function UserPage() {
                 <input
                   type="text"
                   className="form-control"
-                  value={`${window.location.origin
-                    }/profile/${me?.publicId || "profile"}`}
+                  value={`${window.location.origin}/profile/${me?.publicId || "profile"}`}
                   readOnly
                 />
                 <button
-                  className="btn btn-outline-primary"
+                  className="btn"
+                  style={{
+                    background: copiedUrl ? "#28a745" : "#0052cc",
+                    color: "white",
+                    borderColor: copiedUrl ? "#28a745" : "#0052cc",
+                    transition: "all 0.3s ease",
+                    minWidth: "80px",
+                  }}
                   onClick={() => {
-                    const url = `${window.location.origin
-                      }/profile/${me?.publicId || "profile"}`;
+                    const url = `${window.location.origin}/profile/${me?.publicId || "profile"}`;
                     navigator.clipboard.writeText(url);
-                    alert("Profile URL copied to clipboard!");
+                    setCopiedUrl(true);
+                    setTimeout(() => setCopiedUrl(false), 2000);
                   }}
                 >
-                  Copy
+                  {copiedUrl ? (
+                    <>
+                      <i className="fa fa-check me-1"></i>Copied!
+                    </>
+                  ) : (
+                    "Copy"
+                  )}
                 </button>
               </div>
             </div>
             <div className="text-center">
-              <p className="mb-3">Share on social media:</p>
-              <div className="d-flex justify-content-center gap-2">
-                <button className="btn btn-primary btn-sm">
+              <p className="mb-3 fw-semibold">Share on social media:</p>
+              <div className="d-flex justify-content-center gap-2 flex-wrap">
+                <a
+                  className="btn btn-sm"
+                  style={{
+                    background: "#3b5998",
+                    color: "white",
+                    border: "none",
+                    transition: "all 0.2s ease",
+                  }}
+                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+                    `${window.location.origin}/profile/${me?.publicId || "profile"}`
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "scale(1.05)";
+                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(59, 89, 152, 0.4)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
                   <i className="fab fa-facebook-f"></i> Facebook
-                </button>
-                <button className="btn btn-info btn-sm">
+                </a>
+                <a
+                  className="btn btn-sm"
+                  style={{
+                    background: "#1DA1F2",
+                    color: "white",
+                    border: "none",
+                    transition: "all 0.2s ease",
+                  }}
+                  href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(
+                    `${window.location.origin}/profile/${me?.publicId || "profile"}`
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "scale(1.05)";
+                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(29, 161, 242, 0.4)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
                   <i className="fab fa-twitter"></i> Twitter
-                </button>
-                <button className="btn btn-primary btn-sm">
+                </a>
+                <a
+                  className="btn btn-sm"
+                  style={{
+                    background: "#0052cc",
+                    color: "white",
+                    border: "none",
+                    transition: "all 0.2s ease",
+                  }}
+                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+                    `${window.location.origin}/profile/${me?.publicId || "profile"}`
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "scale(1.05)";
+                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 82, 204, 0.4)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
                   <i className="fab fa-linkedin"></i> LinkedIn
-                </button>
-                <button className="btn btn-success btn-sm">
+                </a>
+                <a
+                  className="btn btn-sm"
+                  style={{
+                    background: "#25D366",
+                    color: "white",
+                    border: "none",
+                    transition: "all 0.2s ease",
+                  }}
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+                    `Check out my profile: ${window.location.origin}/profile/${me?.publicId || "profile"}`
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "scale(1.05)";
+                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(37, 211, 102, 0.4)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
                   <i className="fab fa-whatsapp"></i> WhatsApp
-                </button>
+                </a>
               </div>
             </div>
           </div>

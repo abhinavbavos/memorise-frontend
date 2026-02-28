@@ -2,7 +2,6 @@
 import { Fragment, useEffect, useReducer, useState } from "react";
 import {
   Button,
-  Dropdown,
   Modal,
   Tab,
   Nav,
@@ -10,20 +9,13 @@ import {
   Spinner,
 } from "react-bootstrap";
 import { useParams } from "react-router-dom";
-import LightGallery from "lightgallery/react";
-import "lightgallery/css/lightgallery.css";
-import "lightgallery/css/lg-zoom.css";
-import "lightgallery/css/lg-thumbnail.css";
-import profile from "../../assets/images/profile/profile.png";
-import { IMAGES, SVGICON } from "../../data/constant/theme";
+import { IMAGES } from "../../data/constant/theme";
 import { resolveImageUrl } from "../../utils/urlHelpers";
 import api from "../../data/api";
 
 const initialState = {
-  sendMessage: false,
-  postDetail: false,
-  reportPost: false,
   reportUser: false,
+  reportTrophy: false,
   shareProfile: false,
 };
 
@@ -35,64 +27,23 @@ function reducer(state, action) {
   };
 }
 
-function PostActionsDropdown({ post, onReport }) {
-  return (
-    <Dropdown>
-      <Dropdown.Toggle as="div" variant="" className="i-false">
-        <button className="btn btn-light btn-sm sharp" type="button">
-          <span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-            >
-              <g fill="none">
-                <circle fill="#000" cx="12" cy="5" r="2" />
-                <circle fill="#000" cx="12" cy="12" r="2" />
-                <circle fill="#000" cx="12" cy="19" r="2" />
-              </g>
-            </svg>
-          </span>
-        </button>
-      </Dropdown.Toggle>
-      <Dropdown.Menu className="dropdown-menu dropdown-menu-right border py-0">
-        <div className="py-2">
-          <button
-            className="dropdown-item text-warning"
-            onClick={() => onReport(post)}
-          >
-            <i className="fa fa-flag me-2"></i>Report Post
-          </button>
-        </div>
-      </Dropdown.Menu>
-    </Dropdown>
-  );
-}
-
 export default function PubUserPage() {
   const { publicId } = useParams();
   const [state, dispatch] = useReducer(reducer, initialState);
 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-
-  const [posts, setPosts] = useState({
-    items: [],
-    total: 0,
-    page: 1,
-    totalPages: 1,
-  });
   const [trophies, setTrophies] = useState([]);
 
-  const [selectedPost, setSelectedPost] = useState(null);
-  const [reportedPost, setReportedPost] = useState(null);
+  const [reportedTrophy, setReportedTrophy] = useState(null);
   const [reportReason, setReportReason] = useState("");
   const [reportMessage, setReportMessage] = useState("");
+  const [previewTrophy, setPreviewTrophy] = useState(null);
 
   const [selectedTrophyCategory, setSelectedTrophyCategory] = useState("All");
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
-  // Load public profile + posts + trophies
+  // Load public profile + trophies
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -103,26 +54,17 @@ export default function PubUserPage() {
         if (cancelled) return;
         setUser(pub);
 
-        // 2) posts for that user
+        // 2) trophies for that user
         const uid = pub?._id || pub?.id;
         if (!uid) throw new Error("Invalid public profile response");
 
-        const [{ data: postsRes }, { data: trophiesRes }] = await Promise.all([
-          api.get(`/posts/user/${uid}`, { params: { page: 1, pageSize: 12 } }),
-          api.get(`/trophies/user/${uid}`),
-        ]);
-
-        const items = Array.isArray(postsRes) ? postsRes : postsRes.items || [];
-        const total = postsRes.total || items.length;
-        const totalPages = postsRes.totalPages || 1;
+        const { data: trophiesRes } = await api.get(`/trophies/user/${uid}`);
 
         if (cancelled) return;
-        setPosts({ items, total, page: 1, totalPages });
         setTrophies(Array.isArray(trophiesRes) ? trophiesRes : []);
       } catch (e) {
         console.error("Public profile load failed", e);
         if (!cancelled) {
-          setPosts({ items: [], total: 0, page: 1, totalPages: 1 });
           setTrophies([]);
         }
       } finally {
@@ -153,33 +95,81 @@ export default function PubUserPage() {
           ? "warning"
           : "success";
 
-  const handlePostClick = (post) => {
-    setSelectedPost(post);
-    dispatch({ type: "postDetailModal" });
+  const handleDownloadImage = async (imageUrl, title) => {
+    try {
+      const response = await fetch(imageUrl);
+      if (!response.ok) throw new Error("Failed to fetch image");
+      const blob = await response.blob();
+
+      // Determine MIME type from URL or blob
+      let mimeType = blob.type || "image/png";
+      if (!mimeType || mimeType === "application/octet-stream") {
+        if (imageUrl.includes(".jpg") || imageUrl.includes(".jpeg")) {
+          mimeType = "image/jpeg";
+        } else if (imageUrl.includes(".png")) {
+          mimeType = "image/png";
+        } else if (imageUrl.includes(".gif")) {
+          mimeType = "image/gif";
+        } else if (imageUrl.includes(".webp")) {
+          mimeType = "image/webp";
+        }
+      }
+
+      // Create blob with correct MIME type
+      const typedBlob = new Blob([blob], { type: mimeType });
+
+      // Get file extension from MIME type
+      const ext = mimeType.split("/")[1] || "png";
+
+      // Create filename
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const filename = `${title || "trophy"}-${timestamp}.${ext}`;
+
+      // Download
+      const url = URL.createObjectURL(typedBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert("Failed to download image");
+    }
   };
 
-  const handleReportPost = (post) => {
-    setReportedPost(post);
-    dispatch({ type: "reportPostModal" });
+
+
+  const handleReportTrophy = (trophy) => {
+    setReportedTrophy(trophy);
+    dispatch({ type: "reportTrophyModal" });
   };
 
   const submitReport = async () => {
-    if (!user && !reportedPost) return;
+    if (!user && !reportedTrophy) return;
     try {
+      let reportType = "user";
+      let targetId = user._id || user.id;
+
+      if (reportedTrophy) {
+        reportType = "trophy";
+        targetId = reportedTrophy.id || reportedTrophy._id;
+      }
+
       await api.post("/reports", {
-        type: reportedPost ? "post" : "user",
-        targetId: reportedPost
-          ? reportedPost.id || reportedPost._id
-          : user._id || user.id,
+        type: reportType,
+        targetId: targetId,
         reason: reportReason || "other",
         details: reportMessage || "",
       });
       // close modals + reset
-      if (state.reportPost) dispatch({ type: "reportPostModal" });
       if (state.reportUser) dispatch({ type: "reportUserModal" });
+      if (state.reportTrophy) dispatch({ type: "reportTrophyModal" });
       setReportReason("");
       setReportMessage("");
-      setReportedPost(null);
+      setReportedTrophy(null);
       alert("Thank you for your report. We'll review it shortly.");
     } catch (e) {
       alert(e?.response?.data?.error || "Failed to submit report");
@@ -242,7 +232,7 @@ export default function PubUserPage() {
             <div className="profile-info">
               <div className="profile-photo">
                 <img
-                  src={resolveImageUrl(user?.avatarUrl) || profile}
+                  src={resolveImageUrl(user?.avatarUrl) || IMAGES.Profile}
                   className="img-fluid rounded-circle"
                   alt="profile"
                   style={{ width: 80, height: 80, objectFit: "cover" }}
@@ -252,7 +242,6 @@ export default function PubUserPage() {
               <div className="profile-details">
                 <div className="profile-name px-3 pt-2">
                   <h4 className="text-primary mb-0">{user?.name || "User"}</h4>
-                  <p className="mb-0">{user?.email || ""}</p>
                   <small className="text-muted">
                     Member since{" "}
                     {user?.createdAt
@@ -261,15 +250,15 @@ export default function PubUserPage() {
                   </small>
                 </div>
 
-                <Dropdown className="dropdown ms-auto flex justify-center gap-1">
+                <div className="dropdown ms-auto flex justify-center gap-1">
                   <button
                     className="sendbtn sharp"
                     onClick={() => dispatch({ type: "shareProfileModal" })}
                     title="Share"
                   >
-                    {SVGICON.Send}
+                    <i className="fa fa-share-alt"></i>
                   </button>
-                </Dropdown>
+                </div>
               </div>
             </div>
           </div>
@@ -278,85 +267,20 @@ export default function PubUserPage() {
         {/* Tabs */}
         <div className="card mt-3">
           <div className="card-body">
-            <Tab.Container defaultActiveKey="Posts">
-              <Nav as="ul" className="nav nav-tabs">
+            <Tab.Container defaultActiveKey="MyTrophies">
+              <Nav as="ul" className="nav nav-tabs mb-3">
                 <Nav.Item as="li" className="nav-item">
-                  <Nav.Link eventKey="Posts">Posts</Nav.Link>
-                </Nav.Item>
-                <Nav.Item as="li" className="nav-item">
-                  <Nav.Link eventKey="Trophies">Trophies</Nav.Link>
+                  <Nav.Link eventKey="MyTrophies">Trophies</Nav.Link>
                 </Nav.Item>
                 <Nav.Item as="li" className="nav-item">
                   <Nav.Link eventKey="About">About</Nav.Link>
                 </Nav.Item>
               </Nav>
 
-              <Tab.Content>
-                {/* Posts */}
-                <Tab.Pane eventKey="Posts">
-                  <div className="my-post-content pt-3">
-                    {posts.items.length > 0 ? (
-                      posts.items.map((post) => (
-                        <div
-                          key={post._id || post.id}
-                          className="profile-uoloaded-post border-bottom-1 pb-4 mb-4"
-                        >
-                          <div className="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                              <h5 className="text-black mb-1">{post.title}</h5>
-                              <small className="text-muted">
-                                {post.createdAt
-                                  ? new Date(post.createdAt).toLocaleString()
-                                  : ""}
-                              </small>
-                            </div>
-                            <PostActionsDropdown
-                              post={post}
-                              onReport={handleReportPost}
-                            />
-                          </div>
-
-                          <img
-                            src={resolveImageUrl(post.thumbUrl) || IMAGES.Profile8}
-                            alt=""
-                            className="img-fluid w-100 rounded mb-3"
-                            style={{ cursor: "pointer" }}
-                            onClick={() =>
-                              handlePostClick({
-                                ...post,
-                                image: resolveImageUrl(post.thumbUrl) || IMAGES.Profile8,
-                                content: post.description,
-                              })
-                            }
-                          />
-
-                          <p className="mb-3">{post.description}</p>
-                          <Badge
-                            pill
-                            bg={
-                              post.category === "Sports"
-                                ? "danger"
-                                : post.category === "Internship"
-                                  ? "warning"
-                                  : "primary"
-                            }
-                          >
-                            {post.category}
-                          </Badge>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-5">
-                        <i className="fa fa-image fa-3x text-muted mb-3"></i>
-                        <p className="text-muted">No posts available</p>
-                      </div>
-                    )}
-                  </div>
-                </Tab.Pane>
-
-                {/* Trophies */}
-                <Tab.Pane eventKey="Trophies">
-                  <div className="d-flex flex-wrap justify-center gap-2 mb-3">
+              <Tab.Content className="pt-2">
+                {/* My Trophies */}
+                <Tab.Pane eventKey="MyTrophies">
+                  <div className="d-flex flex-wrap justify-center gap-2 mb-4 pt-1">
                     {trophyCategories.map((c) => (
                       <Badge
                         key={c}
@@ -376,45 +300,82 @@ export default function PubUserPage() {
                   </div>
 
                   {filteredTrophies.length > 0 ? (
-                    <LightGallery speed={500} elementClassNames="row g-3">
+                    <div className="list-group">
                       {filteredTrophies.map((t, i) => (
                         <div
-                          data-src={resolveImageUrl(t.imageUrl) || IMAGES.Profile3}
-                          className="col-12 col-sm-6 col-lg-4 col-xl-4"
                           key={i}
+                          className="list-group-item list-group-item-action border rounded mb-3 p-3 shadow-sm"
                         >
-                          <div className="trophy-item position-relative">
-                            <img
-                              className="img-fluid rounded"
-                              src={resolveImageUrl(t.imageUrl) || IMAGES.Profile3}
-                              alt={t.title}
-                              style={{ width: "100%" }}
-                            />
-                            <div className="trophy-overlay position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white p-2 rounded-bottom">
-                              <div className="d-flex justify-content-between align-items-center">
-                                <div>
-                                  <h6
-                                    className="mb-0 text-white"
-                                    style={{ fontSize: "0.8rem" }}
-                                  >
-                                    {t.title}
-                                  </h6>
-                                  <small className="text-light">
-                                    {t.year || ""}
-                                  </small>
-                                </div>
+                          <div className="row align-items-center">
+                            <div className="col-md-3 col-sm-4">
+                              <img
+                                className="img-fluid rounded"
+                                src={resolveImageUrl(t.imageUrl) || IMAGES.Profile3}
+                                alt={t.title}
+                                style={{
+                                  width: "100%",
+                                  maxHeight: "150px",
+                                  objectFit: "cover",
+                                  cursor: "zoom-in"
+                                }}
+                                onClick={() => setPreviewTrophy(t)}
+                              />
+                            </div>
+                            <div className="col-md-6 col-sm-5">
+                              <div className="d-flex align-items-center gap-2 mb-2">
+                                <h5 className="mb-0 text-dark">{t.title}</h5>
                                 <Badge
                                   bg={getTrophyBadgeVariant(t.category)}
-                                  style={{ fontSize: "0.7rem" }}
+                                  className="ms-2"
                                 >
                                   {t.category}
                                 </Badge>
+                              </div>
+                              {t.year && (
+                                <p className="text-muted mb-1">
+                                  <i className="fa fa-calendar me-2"></i>
+                                  {t.year}
+                                </p>
+                              )}
+                              {t.description && (
+                                <p className="text-muted small mb-0">{t.description}</p>
+                              )}
+                            </div>
+                            <div className="col-md-3 col-sm-3 text-end">
+                              <div className="d-flex flex-column gap-2">
+                                <button
+                                  className="btn btn-sm btn-outline-primary"
+                                  onClick={() => setPreviewTrophy(t)}
+                                  title="View trophy"
+                                >
+                                  <i className="fa fa-eye me-1"></i>
+                                  View
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-primary"
+                                  onClick={() => {
+                                    const imageUrl = resolveImageUrl(t.imageUrl);
+                                    handleDownloadImage(imageUrl, t.title);
+                                  }}
+                                  title="Download trophy"
+                                >
+                                  <i className="fa fa-download me-1"></i>
+                                  Download
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-outline-warning"
+                                  onClick={() => handleReportTrophy(t)}
+                                  title="Report trophy"
+                                >
+                                  <i className="fa fa-flag me-1"></i>
+                                  Report
+                                </button>
                               </div>
                             </div>
                           </div>
                         </div>
                       ))}
-                    </LightGallery>
+                    </div>
                   ) : (
                     <div className="text-center py-4">
                       <p className="text-muted">No trophies found.</p>
@@ -425,13 +386,88 @@ export default function PubUserPage() {
                 {/* About */}
                 <Tab.Pane eventKey="About">
                   <div className="pt-4">
-                    <h5 className="text-primary">About {user?.name}</h5>
-                    <p className="mb-2">{user?.about || "-"}</p>
-                    <p className="text-muted mb-0">
-                      <i className="fa fa-map-marker me-2"></i>
-                      {user?.city}
-                      {user?.country ? `, ${user.country}` : ""}
-                    </p>
+                    {/* About Me */}
+                    <div className="border-bottom pb-3 mb-4">
+                      <h4 className="text-primary mb-3">About Me</h4>
+                      <p className="mb-0">{user?.about || user?.info?.about || "No information provided."}</p>
+                    </div>
+
+                    {/* Skills */}
+                    {((user?.skills || user?.info?.skills || []).length > 0) && (
+                      <div className="mb-4">
+                        <h4 className="text-primary mb-3">Skills</h4>
+                        <div className="d-flex flex-wrap gap-2">
+                          {(user?.skills || user?.info?.skills || []).map((skill, index) => (
+                            <span
+                              key={index}
+                              className="badge bg-primary-subtle text-primary border border-primary px-3 py-2"
+                              style={{ fontSize: "0.9rem", fontWeight: "500" }}
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Languages */}
+                    {((user?.languages || user?.info?.languages || []).length > 0) && (
+                      <div className="mb-4">
+                        <h4 className="text-primary mb-3">Languages</h4>
+                        <div className="d-flex flex-wrap gap-3">
+                          {(user?.languages || user?.info?.languages || []).map((language, index) => (
+                            <span
+                              key={index}
+                              className="text-muted"
+                              style={{ fontSize: "1rem" }}
+                            >
+                              <i className="fa fa-language me-2 text-primary"></i>
+                              {language}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Personal Information */}
+                    <div className="profile-personal-info">
+                      <h4 className="text-primary mb-4">Personal Information</h4>
+                      <div className="row mb-2">
+                        <div className="col-sm-3">
+                          <h5 className="f-w-500">
+                            Name<span className="pull-right">:</span>
+                          </h5>
+                        </div>
+                        <div className="col-sm-9">
+                          <span>{user?.name || "-"}</span>
+                        </div>
+                      </div>
+                      <div className="row mb-2">
+                        <div className="col-sm-3">
+                          <h5 className="f-w-500">
+                            Age<span className="pull-right">:</span>
+                          </h5>
+                        </div>
+                        <div className="col-sm-9">
+                          <span>{user?.age || "-"}</span>
+                        </div>
+                      </div>
+                      <div className="row mb-2">
+                        <div className="col-sm-3">
+                          <h5 className="f-w-500">
+                            Location<span className="pull-right">:</span>
+                          </h5>
+                        </div>
+                        <div className="col-sm-9">
+                          <span>
+                            {user?.city || user?.location?.city || ""}
+                            {(user?.country || user?.location?.country) &&
+                              `, ${user?.country || user?.location?.country}`}
+                            {!(user?.city || user?.location?.city || user?.country || user?.location?.country) && "-"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </Tab.Pane>
               </Tab.Content>
@@ -440,79 +476,28 @@ export default function PubUserPage() {
         </div>
       </div>
 
-      {/* Post Detail Modal */}
+      {/* Report User/Trophy Modal */}
       <Modal
         className="modal fade"
-        show={state.postDetail}
-        onHide={() => dispatch({ type: "postDetailModal" })}
-        centered
-        size="lg"
-      >
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title">{selectedPost?.title}</h5>
-            <Button
-              variant=""
-              type="button"
-              className="btn-close"
-              onClick={() => dispatch({ type: "postDetailModal" })}
-            ></Button>
-          </div>
-          <div className="modal-body">
-            {selectedPost && (
-              <>
-                <div className="mb-3">
-                  <small className="text-muted">
-                    {selectedPost.createdAt
-                      ? new Date(selectedPost.createdAt).toLocaleString()
-                      : ""}
-                  </small>
-                </div>
-                <img
-                  src={resolveImageUrl(selectedPost.image) || "/placeholder.svg"}
-                  alt=""
-                  className="img-fluid w-100 rounded mb-3"
-                />
-                <p>{selectedPost.content}</p>
-                <div className="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-                  <button
-                    className="btn btn-outline-warning btn-sm"
-                    onClick={() => {
-                      dispatch({ type: "postDetailModal" });
-                      handleReportPost(selectedPost);
-                    }}
-                  >
-                    <i className="fa fa-flag me-1"></i>Report
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </Modal>
-
-      {/* Report Post/User Modal */}
-      <Modal
-        className="modal fade"
-        show={state.reportPost || state.reportUser}
+        show={state.reportUser || state.reportTrophy}
         onHide={() => {
-          if (state.reportPost) dispatch({ type: "reportPostModal" });
           if (state.reportUser) dispatch({ type: "reportUserModal" });
+          if (state.reportTrophy) dispatch({ type: "reportTrophyModal" });
         }}
         centered
       >
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">
-              {reportedPost ? "Report Post" : "Report User"}
+              {reportedTrophy ? "Report Trophy" : "Report User"}
             </h5>
             <Button
               variant=""
               type="button"
               className="btn-close"
               onClick={() => {
-                if (state.reportPost) dispatch({ type: "reportPostModal" });
                 if (state.reportUser) dispatch({ type: "reportUserModal" });
+                if (state.reportTrophy) dispatch({ type: "reportTrophyModal" });
               }}
             />
           </div>
@@ -545,8 +530,8 @@ export default function PubUserPage() {
             <Button
               variant="secondary"
               onClick={() => {
-                if (state.reportPost) dispatch({ type: "reportPostModal" });
                 if (state.reportUser) dispatch({ type: "reportUserModal" });
+                if (state.reportTrophy) dispatch({ type: "reportTrophyModal" });
               }}
             >
               Cancel
@@ -559,11 +544,44 @@ export default function PubUserPage() {
         </div>
       </Modal>
 
+      <Modal
+        className="modal fade"
+        show={!!previewTrophy}
+        onHide={() => setPreviewTrophy(null)}
+        centered
+        size="lg"
+      >
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title">{previewTrophy?.title || "Trophy"}</h5>
+            <Button
+              variant=""
+              type="button"
+              className="btn-close"
+              onClick={() => setPreviewTrophy(null)}
+            />
+          </div>
+          <div className="modal-body text-center">
+            {previewTrophy && (
+              <img
+                src={resolveImageUrl(previewTrophy.imageUrl) || IMAGES.Profile3}
+                alt={previewTrophy.title || "Trophy"}
+                className="img-fluid rounded"
+                style={{ maxHeight: "70vh", objectFit: "contain" }}
+              />
+            )}
+          </div>
+        </div>
+      </Modal>
+
       {/* Share Profile Modal */}
       <Modal
         className="modal fade"
         show={state.shareProfile}
-        onHide={() => dispatch({ type: "shareProfileModal" })}
+        onHide={() => {
+          dispatch({ type: "shareProfileModal" });
+          setCopiedUrl(false);
+        }}
         centered
       >
         <div className="modal-content">
@@ -573,7 +591,10 @@ export default function PubUserPage() {
               variant=""
               type="button"
               className="btn-close"
-              onClick={() => dispatch({ type: "shareProfileModal" })}
+              onClick={() => {
+                dispatch({ type: "shareProfileModal" });
+                setCopiedUrl(false);
+              }}
             />
           </div>
           <div className="modal-body">
@@ -587,57 +608,130 @@ export default function PubUserPage() {
                   value={shareUrl}
                 />
                 <button
-                  className="btn btn-outline-primary"
+                  className="btn"
+                  style={{
+                    background: copiedUrl ? "#28a745" : "#0052cc",
+                    color: "white",
+                    borderColor: copiedUrl ? "#28a745" : "#0052cc",
+                    transition: "all 0.3s ease",
+                    minWidth: "80px",
+                  }}
                   onClick={() => {
                     navigator.clipboard.writeText(shareUrl);
-                    alert("Profile URL copied!");
+                    setCopiedUrl(true);
+                    setTimeout(() => setCopiedUrl(false), 2000);
                   }}
                 >
-                  Copy
+                  {copiedUrl ? (
+                    <>
+                      <i className="fa fa-check me-1"></i>Copied!
+                    </>
+                  ) : (
+                    "Copy"
+                  )}
                 </button>
               </div>
             </div>
-            <div className="d-flex gap-2 justify-content-center">
-              <a
-                className="btn btn-primary btn-sm"
-                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                  shareUrl
-                )}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <i className="fab fa-facebook-f"></i> Facebook
-              </a>
-              <a
-                className="btn btn-info btn-sm"
-                href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(
-                  shareUrl
-                )}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <i className="fab fa-twitter"></i> Twitter
-              </a>
-              <a
-                className="btn btn-primary btn-sm"
-                href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
-                  shareUrl
-                )}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <i className="fab fa-linkedin"></i> LinkedIn
-              </a>
-              <a
-                className="btn btn-success btn-sm"
-                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                  shareUrl
-                )}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <i className="fab fa-whatsapp"></i> WhatsApp
-              </a>
+            <div className="text-center">
+              <p className="mb-3 fw-semibold">Share on social media:</p>
+              <div className="d-flex gap-2 justify-content-center flex-wrap">
+                <a
+                  className="btn btn-sm"
+                  style={{
+                    background: "#3b5998",
+                    color: "white",
+                    border: "none",
+                    transition: "all 0.2s ease",
+                  }}
+                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+                    shareUrl
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "scale(1.05)";
+                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(59, 89, 152, 0.4)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  <i className="fab fa-facebook-f"></i> Facebook
+                </a>
+                <a
+                  className="btn btn-sm"
+                  style={{
+                    background: "#1DA1F2",
+                    color: "white",
+                    border: "none",
+                    transition: "all 0.2s ease",
+                  }}
+                  href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(
+                    shareUrl
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "scale(1.05)";
+                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(29, 161, 242, 0.4)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  <i className="fab fa-twitter"></i> Twitter
+                </a>
+                <a
+                  className="btn btn-sm"
+                  style={{
+                    background: "#0052cc",
+                    color: "white",
+                    border: "none",
+                    transition: "all 0.2s ease",
+                  }}
+                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+                    shareUrl
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "scale(1.05)";
+                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 82, 204, 0.4)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  <i className="fab fa-linkedin"></i> LinkedIn
+                </a>
+                <a
+                  className="btn btn-sm"
+                  style={{
+                    background: "#25D366",
+                    color: "white",
+                    border: "none",
+                    transition: "all 0.2s ease",
+                  }}
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+                    shareUrl
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "scale(1.05)";
+                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(37, 211, 102, 0.4)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  <i className="fab fa-whatsapp"></i> WhatsApp
+                </a>
+              </div>
             </div>
           </div>
         </div>

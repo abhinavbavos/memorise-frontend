@@ -40,12 +40,62 @@ const TrophyList = ({
         }
     };
 
+    const handleDownloadImage = async (imageUrl, title) => {
+        try {
+            const response = await fetch(imageUrl);
+            if (!response.ok) throw new Error("Failed to fetch image");
+            const blob = await response.blob();
+
+            // Determine MIME type from URL FIRST (priority), then from blob
+            let mimeType = "image/png"; // default
+            let ext = "png";
+
+            // Check URL extension first (priority)
+            if (imageUrl.includes(".jpg") || imageUrl.includes(".jpeg")) {
+                mimeType = "image/jpeg";
+                ext = "jpg";
+            } else if (imageUrl.includes(".png")) {
+                mimeType = "image/png";
+                ext = "png";
+            } else if (imageUrl.includes(".gif")) {
+                mimeType = "image/gif";
+                ext = "gif";
+            } else if (imageUrl.includes(".webp")) {
+                mimeType = "image/webp";
+                ext = "webp";
+            } else if (blob.type && blob.type !== "application/octet-stream") {
+                // Use blob type only if URL didn't match and blob type is valid
+                mimeType = blob.type;
+                ext = blob.type.split("/")[1] || "png";
+            }
+
+            // Create blob with correct MIME type
+            const typedBlob = new Blob([blob], { type: mimeType });
+
+            // Create filename
+            const timestamp = new Date().toISOString().slice(0, 10);
+            const filename = `${(title || "trophy").replace(/\s+/g, "-")}-${timestamp}.${ext}`;
+
+            // Download
+            const url = URL.createObjectURL(typedBlob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Download failed:", error);
+            alert("Failed to download image");
+        }
+    };
+
     return (
         <div className="col-lg-12">
             <div className="card mb-4 border-0 bg-transparent shadow-none">
                 <div className="card-header border-0 pb-0 bg-transparent px-0">
                     <div className="d-flex flex-column flex-md-row justify-content-between align-items-center w-100 mb-3">
-                        <h5 className="text-primary mb-2 mb-md-0">My Trophies</h5>
                         <div className="d-flex flex-wrap gap-2">
                             {trophyCategories.map((category, index) => (
                                 <Badge
@@ -124,20 +174,43 @@ const TrophyList = ({
                                         )}
 
                                         {/* Post Image (Clickable for Lightbox) */}
-                                        {/* Post Image (Clickable for Lightbox) */}
-                                        <a
-                                            href={resolveImageUrl(item.fileUrl || item.thumbUrl || item.imageUrl || item.image) || IMAGES.Profile3}
-                                            data-src={resolveImageUrl(item.fileUrl || item.thumbUrl || item.imageUrl || item.image) || IMAGES.Profile3}
-                                            className="gallery-item d-block rounded overflow-hidden bg-light cursor-pointer border"
-                                            style={{ maxHeight: "500px", display: "flex", justifyContent: "center", alignItems: "center" }}
-                                        >
-                                            <img
-                                                src={resolveImageUrl(item.thumbUrl || item.fileUrl || item.imageUrl || item.image) || "/placeholder.svg"}
-                                                alt={item.title}
-                                                className="img-fluid"
-                                                style={{ objectFit: "contain", maxHeight: "500px", width: "100%" }}
-                                            />
-                                        </a>
+                                        <div className="position-relative">
+                                            <a
+                                                href={resolveImageUrl(item.fileUrl || item.thumbUrl || item.imageUrl || item.image) || IMAGES.Profile3}
+                                                data-src={resolveImageUrl(item.fileUrl || item.thumbUrl || item.imageUrl || item.image) || IMAGES.Profile3}
+                                                className="gallery-item d-block rounded overflow-hidden bg-light cursor-pointer border"
+                                                style={{ maxHeight: "500px", display: "flex", justifyContent: "center", alignItems: "center" }}
+                                            >
+                                                <img
+                                                    src={resolveImageUrl(item.thumbUrl || item.fileUrl || item.imageUrl || item.image) || "/placeholder.svg"}
+                                                    alt={item.title}
+                                                    className="img-fluid"
+                                                    style={{ objectFit: "contain", maxHeight: "500px", width: "100%" }}
+                                                />
+                                            </a>
+                                            <button
+                                                className="btn btn-sm btn-primary position-absolute"
+                                                style={{
+                                                    bottom: "10px",
+                                                    right: "10px",
+                                                    borderRadius: "50%",
+                                                    width: "40px",
+                                                    height: "40px",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    padding: "0"
+                                                }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const imageUrl = resolveImageUrl(item.fileUrl || item.thumbUrl || item.imageUrl || item.image);
+                                                    handleDownloadImage(imageUrl, item.title);
+                                                }}
+                                                title="Download image"
+                                            >
+                                                <i className="fa fa-download" style={{ fontSize: "16px" }}></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             ))}

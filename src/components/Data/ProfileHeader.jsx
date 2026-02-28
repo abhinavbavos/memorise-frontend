@@ -32,23 +32,35 @@ const ProfileHeader = ({
                             >
                                 {/* Change Cover Button */}
                                 <button
-                                    className="btn btn-primary position-absolute"
+                                    className="btn btn-primary"
                                     style={{
-                                        bottom: "10px",
-                                        right: "10px",
-                                        borderRadius: "20px",
-                                        padding: "5px 15px",
-                                        fontSize: "0.85rem",
+                                        bottom: "15px",
+                                        right: "15px",
+                                        borderRadius: "25px",
+                                        padding: "8px 18px",
+                                        fontSize: "0.9rem",
                                         display: "flex",
                                         alignItems: "center",
-                                        gap: "5px",
-                                        background: "rgba(0,0,0,0.6)",
-                                        border: "1px solid rgba(255,255,255,0.3)",
+                                        gap: "8px",
+                                        background: "rgba(0, 82, 204, 0.9)",
+                                        border: "1px solid rgba(255,255,255,0.4)",
                                         backdropFilter: "blur(4px)",
                                         color: "white",
-                                        transition: "all 0.2s ease"
+                                        transition: "all 0.3s ease",
+                                        fontWeight: "600",
+                                        position: "absolute",
+                                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+                                        cursor: "pointer",
                                     }}
                                     onClick={onCoverUpload}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.background = "rgba(0, 82, 204, 1)";
+                                        e.target.style.boxShadow = "0 6px 16px rgba(0, 0, 0, 0.3)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.background = "rgba(0, 82, 204, 0.9)";
+                                        e.target.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.2)";
+                                    }}
                                 >
                                     <i className="fa fa-camera"></i> Change Cover
                                 </button>
@@ -72,34 +84,43 @@ const ProfileHeader = ({
                                     }}
                                 />
                                 <button
-                                    className="btn btn-primary btn-sm position-absolute"
+                                    className="btn btn-primary position-absolute"
                                     style={{
-                                        bottom: 4,
-                                        right: 4,
-                                        borderRadius: "90%",
-                                        width: 28,
-                                        height: 28,
+                                        bottom: -5,
+                                        right: -5,
+                                        borderRadius: "50%",
+                                        width: 45,
+                                        height: 45,
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
-                                        background: "linear-gradient(135deg, #1976D2, #0D47A1)",
-                                        boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-                                        border: "none",
-                                        transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                                        background: "linear-gradient(135deg, #0052cc, #003d99)",
+                                        boxShadow: "0 4px 12px rgba(0, 82, 204, 0.4)",
+                                        border: "3px solid white",
+                                        transition: "all 0.2s ease",
+                                        cursor: "pointer",
+                                        padding: "0",
                                     }}
                                     onClick={onAvatarUpload}
                                     title="Change avatar"
+                                    onMouseEnter={(e) => {
+                                        e.target.style.transform = "scale(1.1)";
+                                        e.target.style.boxShadow = "0 6px 16px rgba(0, 82, 204, 0.5)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.transform = "scale(1)";
+                                        e.target.style.boxShadow = "0 4px 12px rgba(0, 82, 204, 0.4)";
+                                    }}
                                 >
                                     <i
                                         className="fa fa-camera"
-                                        style={{ fontSize: 14, color: "white" }}
+                                        style={{ fontSize: 18, color: "white" }}
                                     />
                                 </button>
                             </div>
                             <div className="profile-details d-flex align-items-center flex-wrap gap-4 ps-4 pt-3 w-100">
                                 <div className="d-flex align-items-center flex-wrap gap-3">
                                     <h4 className="text-primary mb-0 font-w600">{user?.name}</h4>
-                                    <span className="text-muted fs-14">{user?.email}</span>
                                     <Badge
                                         as="span"
                                         bg="badge-rounded"

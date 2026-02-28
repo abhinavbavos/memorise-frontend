@@ -1,6 +1,7 @@
 // src/pages/Login/Login.jsx
 import React, { useState } from "react";
-import login from "../../assets/images/memrise.png";
+import trophyLogo from "../../assets/images/trophy.png";
+import memoriseLogo from "../../assets/images/memrise.png";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../../data/api";
 
@@ -110,8 +111,32 @@ export default function Login() {
               <div className="authincation-content style-1">
                 <div className="row h-100">
                   <div className="col-md-6 h-100">
-                    <div className="img-bx">
-                      <img src={login} alt="" className="img-fluid" style={{ objectFit: `contain` }} />
+                    <div className="img-bx d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "400px" }}>
+                      <div className="d-flex align-items-center justify-content-center gap-3 mb-4">
+                        <Link to="/" className="d-flex align-items-center">
+                          <img
+                            src={trophyLogo}
+                            alt="Trophy Logo"
+                            className="img-fluid"
+                            style={{ height: "130px", width: "auto" }}
+                          />
+                        </Link>
+                        <span style={{ color: "#bbb", fontSize: "32px", margin: "0 8px" }}>|</span>
+                        <a
+                          href="https://mrise.ca/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="d-flex align-items-center"
+                        >
+                          <img
+                            src={memoriseLogo}
+                            alt="Memorise Logo"
+                            className="img-fluid"
+                            style={{ height: "130px", width: "auto" }}
+                          />
+                        </a>
+                      </div>
+                      <p className="text-center text-muted" style={{ fontSize: "14px" }}>Digital Trophy Hub</p>
                     </div>
                   </div>
                   <div className="col-md-6">

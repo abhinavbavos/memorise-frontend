@@ -46,14 +46,6 @@ const PostList = ({ user, posts, onCameraClick, onPostModalClick }) => {
                             <i className="fa fa-image text-success f-s-18"></i>
                             <span className="d-none d-sm-inline font-w500">Photo/Video</span>
                         </button>
-
-                        <button
-                            className="btn btn-light bg-transparent border-0 d-flex align-items-center gap-2 text-secondary flex-grow-1 justify-content-center"
-                            onClick={onPostModalClick}
-                        >
-                            <i className="fa fa-smile-o text-warning f-s-18"></i>
-                            <span className="d-none d-sm-inline font-w500">Feeling/Activity</span>
-                        </button>
                     </div>
                 </div>
             </div>

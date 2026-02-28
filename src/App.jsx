@@ -11,6 +11,7 @@ import "./assets/css/style.css";
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
 import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
+import Home from "./pages/Home/Home";
 import MainLayout, { AdminLayout, PublicLayout } from "./layout/MainLayout";
 import UserPage from "./pages/UserPage/UserPage";
 import AdminUsers from "./pages/AdminUsers/AdminUsers";
@@ -73,6 +74,7 @@ function App() {
       path: "/",
       element: <PublicLayout />,
       children: [
+        { index: true, element: <Home /> },
         { path: "login", element: <Login /> },
         { path: "register", element: <Register /> },
         { path: "forgot-password", element: <ForgotPassword /> },

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import "./PublicNav.scss"
-import logo from "../../assets/images/memrise.png"
+import trophyLogo from "../../assets/images/trophy.png"
 import { SVGICON } from "../../data/constant/theme"
 import { Link } from "react-router-dom"
 
@@ -14,8 +14,24 @@ const PublicNav = () => {
         <nav className="nav">
           <div className="navcontent">
             <div className="nav-left">
-              <div className="brandlogo">
-                <img src={logo || "/placeholder.svg"} alt="Memorise | Memorise Trophies and Gifts" />
+              <div className="brandlogo d-flex align-items-center gap-3">
+                <Link to="/" className="d-flex align-items-center">
+                  <img
+                    src={trophyLogo}
+                    alt="Trophy Logo"
+                    style={{ height: "50px", width: "auto" }}
+                  />
+                </Link>
+                <a
+                  href="https://mrise.ca/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-outline-primary btn-sm"
+                  style={{ fontSize: "0.85rem", padding: "6px 12px" }}
+                  title="Visit Memorise website"
+                >
+                  Visit Memorise
+                </a>
               </div>
             </div>
             <div className="nav-right">

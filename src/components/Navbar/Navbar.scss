@@ -29,15 +29,17 @@
         .nav-left {
           display: flex;
           align-items: center;
+          gap: 12px;
 
           .brandlogo {
             display: flex;
             align-items: center;
-            justify-content: center;
-            width: 120px;
+            justify-content: flex-start;
+            gap: 12px;
+            width: auto;
 
             img {
-              max-height: 42px;
+              max-height: 60px;
               width: auto;
             }
           }
@@ -95,7 +97,9 @@
                   display: block;
                 }
 
-                .usermediamenu.is-open { display: block; }
+                .usermediamenu.is-open {
+                  display: block;
+                }
 
                 .avatar,
                 .avatar-md {
