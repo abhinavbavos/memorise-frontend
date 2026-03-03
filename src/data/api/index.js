@@ -3,8 +3,8 @@ import axios from "axios";
 
 // Prefer VITE_API_BASE_URL from .env; fallback to localhost
 function normalizeBase(url) {
-  // if (!url) return "http://localhost:4060/api";
-    if (!url) return "https://api.memorisehub.com/api";
+  if (!url) return "http://localhost:4060/api";
+    // if (!url) return "https://api.memorisehub.com/api";
 
   // Trim trailing slash
   const trimmed = url.replace(/\/$/, "");

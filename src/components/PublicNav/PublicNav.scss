@@ -70,6 +70,37 @@
           }
         }
 
+        .nav-center {
+          flex: 1;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 0 1rem;
+
+          .nav-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            background: linear-gradient(
+              135deg,
+              #dc143c 0%,
+              #8b0000 50%,
+              #000000 100%
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            white-space: nowrap;
+
+            @media (max-width: 992px) {
+              font-size: 1rem;
+            }
+
+            @media (max-width: 768px) {
+              display: none;
+            }
+          }
+        }
+
         .nav-right {
           height: 100%;
           display: flex;

@@ -34,6 +34,11 @@ const PublicNav = () => {
                 </a>
               </div>
             </div>
+
+            <div className="nav-center">
+              <h4 className="nav-title mb-0">Memorise Digital Trophy Hub</h4>
+            </div>
+
             <div className="nav-right">
               <ul className="navlist">
                 {/* Desktop Navigation Links */}
