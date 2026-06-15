@@ -1,14 +1,104 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Modal } from "react-bootstrap";
+import { resolveImageUrl } from "../../utils/urlHelpers";
 import api from "../../data/api";
 
 const pageSizeOptions = [10, 25, 50];
 
+// ----- inline icons -----
+const Icon = {
+  search: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-3.5-3.5" /></svg>
+  ),
+  refresh: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M23 4v6h-6M1 20v-6h6" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></svg>
+  ),
+  download: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5M12 15V3" /></svg>
+  ),
+  kebab: (
+    <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></svg>
+  ),
+  edit: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
+  ),
+  ban: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M5.6 5.6l12.8 12.8" /></svg>
+  ),
+  gavel: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M14 13l-7.5 7.5a2.12 2.12 0 0 1-3-3L11 10" /><path d="M9 7l4 4M13 3l8 8M15 5l-4 4" /></svg>
+  ),
+  trash: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /></svg>
+  ),
+  close: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+  ),
+  users: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
+  ),
+  crown: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 18h20M3 8l4.5 4L12 5l4.5 7L21 8l-1.5 8h-15z" /></svg>
+  ),
+  shieldCheck: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M9 12l2 2 4-4" /></svg>
+  ),
+  pie: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83" /><path d="M22 12A10 10 0 0 0 12 2v10z" /></svg>
+  ),
+  pulse: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+  ),
+  book: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
+  ),
+};
+
+// ---- small presentational pieces ----
+function StatTile({ tone, icon, label, value, meta }) {
+  return (
+    <div className="ad-stat">
+      <div className={`ad-stat__icon ad-stat__icon--${tone}`}>{icon}</div>
+      <div className="ad-stat__body">
+        <p className="ad-stat__label">{label}</p>
+        <h3 className="ad-stat__value">{value}</h3>
+        {meta && <p className="ad-stat__meta">{meta}</p>}
+      </div>
+    </div>
+  );
+}
+
+function Breakdown({ items, total }) {
+  const max = Math.max(1, ...items.map((i) => i.value));
+  return (
+    <div className="ad-breakdown">
+      {items.map((it) => (
+        <div className="ad-breakdown__row" key={it.label}>
+          <div className="ad-breakdown__top">
+            <span className="ad-breakdown__label">
+              <span className="ad-breakdown__dot" style={{ background: it.color }} />
+              {it.label}
+            </span>
+            <span className="ad-breakdown__val">{it.value}</span>
+          </div>
+          <div className="ad-breakdown__bar">
+            <div className="ad-breakdown__fill" style={{ width: `${(it.value / max) * 100}%`, background: it.color }} />
+          </div>
+        </div>
+      ))}
+      {total === 0 && (
+        <p className="ad-state__sub" style={{ textAlign: "center", margin: "4px 0 0" }}>
+          No data on this page yet.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function AdminUsers() {
   const [dropdownOpen, setDropdownOpen] = useState(null);
 
-  // filters (plan + dates filtered client-side; server gets search/page/limit/sort)
   const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState({
     subscriptionPlan: "all",
@@ -17,7 +107,6 @@ export default function AdminUsers() {
     searchTerm: searchParams.get("search") || "",
   });
 
-  // paging / data
   const [sort, setSort] = useState("-createdAt");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -26,7 +115,6 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // edit modal
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editUser, setEditUser] = useState(null);
@@ -37,12 +125,7 @@ export default function AdminUsers() {
     setDropdownOpen(dropdownOpen === index ? null : index);
 
   const resetFilters = () =>
-    setFilters({
-      subscriptionPlan: "all",
-      dateFrom: "",
-      dateTo: "",
-      searchTerm: "",
-    });
+    setFilters({ subscriptionPlan: "all", dateFrom: "", dateTo: "", searchTerm: "" });
 
   const handleFilterChange = (k, v) => setFilters((p) => ({ ...p, [k]: v }));
 
@@ -51,7 +134,6 @@ export default function AdminUsers() {
     [total, limit]
   );
 
-  // server load (search/page/limit/sort)
   const load = async () => {
     setLoading(true);
     setError("");
@@ -60,12 +142,7 @@ export default function AdminUsers() {
       abortRef.current = new AbortController();
 
       const { data } = await api.get("/admin/users", {
-        params: {
-          search: filters.searchTerm || "",
-          page,
-          limit,
-          sort,
-        },
+        params: { search: filters.searchTerm || "", page, limit, sort },
         signal: abortRef.current.signal,
       });
 
@@ -115,6 +192,26 @@ export default function AdminUsers() {
       return true;
     });
   }, [rows, filters]);
+
+  // derived insights for the KPI row + side rail (current page of users)
+  const insights = useMemo(() => {
+    let premium = 0;
+    let free = 0;
+    let active = 0;
+    let suspended = 0;
+    let banned = 0;
+    let admins = 0;
+    filteredRows.forEach((u) => {
+      if ((u.plan || "free").toLowerCase() === "premium") premium += 1;
+      else free += 1;
+      const s = (u.status || "active").toLowerCase();
+      if (s === "banned") banned += 1;
+      else if (s === "active") active += 1;
+      else suspended += 1;
+      if ((u.role || "user").toLowerCase() === "admin") admins += 1;
+    });
+    return { premium, free, active, suspended, banned, admins, pageCount: filteredRows.length };
+  }, [filteredRows]);
 
   const exportCSV = () => {
     const header = ["Name", "Email", "Plan", "Role", "Status", "Joined"];
@@ -170,14 +267,9 @@ export default function AdminUsers() {
       if (editUser.planValidUntil)
         body.planValidUntil = new Date(editUser.planValidUntil).toISOString();
 
-      setRows((r) =>
-        r.map((u) => (u._id === editUser._id ? { ...u, ...body } : u))
-      );
+      setRows((r) => r.map((u) => (u._id === editUser._id ? { ...u, ...body } : u)));
 
-      const { data: updated } = await api.put(
-        `/admin/users/${editUser._id}`,
-        body
-      );
+      const { data: updated } = await api.put(`/admin/users/${editUser._id}`, body);
 
       if (updated?._id) {
         setRows((r) => r.map((u) => (u._id === updated._id ? updated : u)));
@@ -217,325 +309,330 @@ export default function AdminUsers() {
     }
   };
 
+  const planBadge = (plan) =>
+    (plan || "free") === "premium" ? "ad-badge ad-badge--violet ad-badge--nodot" : "ad-badge ad-badge--gray ad-badge--nodot";
+  const statusBadge = (s) =>
+    s === "active" ? "ad-badge ad-badge--green" : s === "banned" ? "ad-badge ad-badge--red" : "ad-badge ad-badge--amber";
+
+  const pageWindow = Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+    let pNum = i + 1;
+    if (page > 3 && totalPages > 5) pNum = page - 2 + i;
+    return pNum;
+  }).filter((n) => n <= totalPages);
+
   return (
     <Fragment>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50 p-6 font-sans text-gray-900">
-        <div className="max-w-7xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 backdrop-blur-md bg-white/5 rounded-2xl p-6 border border-white/10 shadow-xl">
-            <div>
-              <h1 className="text-3xl font-bold text-black">
-                User Management
-              </h1>
-              <p className="text-gray-400 mt-1">Manage all your platform users efficiently.</p>
+      <div className="ad-shell ad-page">
+        <div className="ad-wrap ad-stagger" style={{ display: "grid", gap: 22 }}>
+          {/* Hero */}
+          <div className="ad-hero">
+            <div className="ad-hero__lead">
+              <div className="ad-hero__icon">{Icon.users}</div>
+              <div>
+                <p className="ad-eyebrow">People</p>
+                <h1 className="ad-hero__title">User Management</h1>
+                <p className="ad-hero__sub">Search, filter, edit and moderate every member of your platform.</p>
+              </div>
             </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative group">
-                <select
-                  value={limit}
-                  onChange={(e) => {
-                    setLimit(parseInt(e.target.value, 10));
-                    setPage(1);
-                  }}
-                  className="appearance-none bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block w-full p-2.5 pr-8 hover:bg-gray-100 transition-colors cursor-pointer"
-                >
-                  {pageSizeOptions.map((n) => (
-                    <option key={n} value={n} className="bg-white text-gray-900">
-                      {n} per page
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-600 group-hover:text-gray-900">
-                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
-                </div>
-              </div>
-
-              <div className="relative group">
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value)}
-                  className="appearance-none bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block w-full p-2.5 pr-8 hover:bg-gray-100 transition-colors cursor-pointer"
-                  style={{ minWidth: "160px" }}
-                >
-                  <option value="-createdAt" className="bg-white">Newest First</option>
-                  <option value="createdAt" className="bg-white">Oldest First</option>
-                  <option value="name" className="bg-white">Name (A-Z)</option>
-                  <option value="-name" className="bg-white">Name (Z-A)</option>
-                  <option value="email" className="bg-white">Email (A-Z)</option>
-                  <option value="-email" className="bg-white">Email (Z-A)</option>
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-600 group-hover:text-gray-900">
-                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
-                </div>
-              </div>
-
-              <button
-                onClick={load}
-                className="p-2.5 rounded-lg bg-gray-100 text-gray-700 border border-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-all duration-300 group"
-                title="Refresh"
+            <div className="ad-hero__tools">
+              <select
+                className="ad-select"
+                style={{ width: 140 }}
+                value={limit}
+                onChange={(e) => {
+                  setLimit(parseInt(e.target.value, 10));
+                  setPage(1);
+                }}
               >
-                <i className="fa fa-refresh group-hover:rotate-180 transition-transform duration-500"></i>
-              </button>
+                {pageSizeOptions.map((n) => (
+                  <option key={n} value={n}>{n} per page</option>
+                ))}
+              </select>
+              <select
+                className="ad-select"
+                style={{ width: 160 }}
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+              >
+                <option value="-createdAt">Newest First</option>
+                <option value="createdAt">Oldest First</option>
+                <option value="name">Name (A-Z)</option>
+                <option value="-name">Name (Z-A)</option>
+                <option value="email">Email (A-Z)</option>
+                <option value="-email">Email (Z-A)</option>
+              </select>
+              <button className="ad-iconbtn" onClick={load} title="Refresh">{Icon.refresh}</button>
             </div>
+          </div>
+
+          {/* KPI row */}
+          <div className="ad-kpis">
+            <StatTile tone="blue" icon={Icon.users} label="Total Users" value={total.toLocaleString()} meta={<span className="ad-badge ad-badge--gray ad-badge--nodot">All members</span>} />
+            <StatTile tone="amber" icon={Icon.crown} label="Premium Members" value={insights.premium} meta={<span className="ad-stat__period">this page</span>} />
+            <StatTile tone="green" icon={Icon.shieldCheck} label="Active" value={insights.active} meta={<span className="ad-stat__period">this page</span>} />
+            <StatTile tone="pink" icon={Icon.ban} label="Suspended / Banned" value={insights.suspended + insights.banned} meta={<span className="ad-stat__period">this page</span>} />
           </div>
 
           {/* Filters */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
-            <div className="mb-4 flex items-center text-lg font-semibold text-gray-900">
-              <i className="fa fa-filter mr-2 text-red-600"></i> Filters
+          <div className="ad-card">
+            <div className="ad-card__head">
+              <h3 className="ad-card__title">Filters</h3>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4">
-              <div className="lg:col-span-4">
-                <form onSubmit={onSearch} className="relative">
+            <div className="ad-card__body">
+              <div className="ad-filters ad-filters--users">
+                <form onSubmit={onSearch} className="ad-search">
+                  {Icon.search}
                   <input
+                    className="ad-input"
                     type="text"
-                    placeholder="Search by name or email..."
+                    placeholder="Search by name or email…"
                     value={filters.searchTerm}
                     onChange={(e) => handleFilterChange("searchTerm", e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block p-3 pr-10 placeholder-gray-500 transition-all"
                   />
-                  <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-600 hover:text-red-600 transition-colors">
-                    <i className="fa fa-search"></i>
-                  </button>
                 </form>
-              </div>
 
-              <div className="lg:col-span-2">
                 <select
+                  className="ad-select"
                   value={filters.subscriptionPlan}
                   onChange={(e) => handleFilterChange("subscriptionPlan", e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block p-3 transition-all"
                 >
-                  <option value="all" className="bg-white">All Plans</option>
-                  <option value="free" className="bg-white">Free</option>
-                  <option value="premium" className="bg-white">Premium</option>
+                  <option value="all">All Plans</option>
+                  <option value="free">Free</option>
+                  <option value="premium">Premium</option>
                 </select>
-              </div>
 
-              <div className="lg:col-span-2">
                 <input
+                  className="ad-input"
                   type="date"
                   value={filters.dateFrom}
                   onChange={(e) => handleFilterChange("dateFrom", e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block p-3 transition-all"
-                  style={{ colorScheme: 'light' }}
+                  style={{ colorScheme: "light" }}
                 />
-              </div>
-
-              <div className="lg:col-span-2">
                 <input
+                  className="ad-input"
                   type="date"
                   value={filters.dateTo}
                   onChange={(e) => handleFilterChange("dateTo", e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block p-3 transition-all"
-                  style={{ colorScheme: 'light' }}
+                  style={{ colorScheme: "light" }}
                 />
-              </div>
 
-              <div className="lg:col-span-2 flex gap-2">
-                <button
-                  onClick={resetFilters}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 font-medium rounded-lg text-sm px-4 py-2.5 transition-all duration-300 hover:shadow-md focus:outline-none"
-                >
-                  Reset
-                </button>
-                <button
-                  onClick={exportCSV}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg text-sm px-4 py-2.5 shadow-md hover:shadow-lg transition-all duration-300 focus:outline-none"
-                >
-                  Export
-                </button>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button className="ad-btn ad-btn--ghost" onClick={resetFilters}>Reset</button>
+                  <button className="ad-btn ad-btn--primary" onClick={exportCSV}>{Icon.download} Export</button>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Table */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
-            {error && (
-              <div className="bg-red-50 border-l-4 border-red-600 p-4 m-4 rounded text-red-800">
-                <p>{error}</p>
-              </div>
-            )}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-gray-700">
-                <thead className="bg-gray-50 text-gray-700 uppercase text-xs font-semibold tracking-wider border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-4">User</th>
-                    <th className="px-6 py-4">Email</th>
-                    <th className="px-6 py-4">Plan</th>
-                    <th className="px-6 py-4">Role</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4">Joined</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-gray-600 animate-pulse">
-                        <i className="fa fa-circle-o-notch fa-spin mr-2"></i> Loading users...
-                      </td>
-                    </tr>
-                  ) : filteredRows.length > 0 ? (
-                    filteredRows.map((u, index) => (
-                      <tr
-                        key={u._id}
-                        className="hover:bg-gray-50 transition-colors duration-200 group"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <img
-                              className="h-10 w-10 rounded-full object-cover ring-2 ring-gray-200 group-hover:ring-red-500 transition-all"
-                              src={u.avatarUrl || "/placeholder.svg"}
-                              alt={u.name}
-                            />
-                            <div className="ml-4">
-                              <Link
-                                to={`/profile/${u.publicId || u._id}`}
-                                target="_blank"
-                                className="text-sm font-medium text-gray-900 hover:text-red-600 hover:underline transition-colors cursor-pointer block"
-                              >
-                                {u.name}
-                              </Link>
-                              <div className="text-xs text-gray-500">
-                                <Link to={`/profile/${u.publicId || u._id}`} target="_blank" className="hover:text-red-600 transition-colors">
-                                  View Profile ↗
-                                </Link>
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          {u.email}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${(u.plan || 'free') === 'premium'
-                            ? 'bg-red-50 text-red-700 border-red-200'
-                            : 'bg-gray-100 text-gray-700 border-gray-300'
-                            }`}>
-                            {(u.plan || 'free').toUpperCase()}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 capitalize">
-                          {u.role || 'user'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2.5 py-0.5 rounded text-xs font-medium border ${u.status === 'active' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                            u.status === 'banned' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                              'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-                            }`}>
-                            {(u.status || 'active').toUpperCase()}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                          {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "-"}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
-                          {/* Actions Dropdown */}
-                          <div className="relative inline-block text-left">
-                            <button
-                              onClick={() => toggleDropdown(index)}
-                              className="text-gray-600 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none"
-                            >
-                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 13a1 1 0 100-2 1 1 0 000 2zm6 0a1 1 0 100-2 1 1 0 000 2zm-12 0a1 1 0 100-2 1 1 0 000 2z" />
-                              </svg>
-                            </button>
-
-                            {dropdownOpen === index && (
-                              <div className="absolute right-0 mt-2 w-48 rounded-xl shadow-lg bg-white border border-gray-200 ring-1 ring-black ring-opacity-5 z-50 overflow-hidden transform transition-all origin-top-right">
-                                <div className="py-1">
-                                  <button
-                                    onClick={() => openEdit(u)}
-                                    className="group flex w-full items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                  >
-                                    <i className="fa fa-pencil w-5 text-gray-500"></i> Edit
-                                  </button>
-                                  <button
-                                    onClick={() => setStatus(u._id, u.status === "active" ? "suspended" : "active")}
-                                    className="group flex w-full items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-yellow-50 transition-colors"
-                                  >
-                                    <i className="fa fa-ban w-5 text-yellow-600"></i> {u.status === "active" ? "Suspend" : "Activate"}
-                                  </button>
-                                  <button
-                                    onClick={() => setStatus(u._id, "banned")}
-                                    className="group flex w-full items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-red-50 transition-colors"
-                                  >
-                                    <i className="fa fa-gavel w-5 text-red-600"></i> Ban
-                                  </button>
-                                  <div className="border-t border-gray-200 my-1"></div>
-                                  <button
-                                    onClick={() => removeUser(u._id)}
-                                    className="group flex w-full items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                                  >
-                                    <i className="fa fa-trash w-5"></i> Delete
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Backdrop to close dropdown */}
-                            {dropdownOpen === index && (
-                              <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(null)}></div>
-                            )}
-                          </div>
-                        </td>
+          {/* Board: table (main) + insight rail (side) */}
+          <div className="ad-board">
+            <div className="ad-board__main">
+              <div className="ad-card ad-tablecard">
+                <div className="ad-toolbar">
+                  <h3 className="ad-toolbar__title">Members</h3>
+                  <span className="ad-count">{Icon.users} {total.toLocaleString()} total</span>
+                </div>
+                {error && (
+                  <div className="ad-alert ad-alert--error"><span>{error}</span></div>
+                )}
+                <div className="ad-tablewrap">
+                  <table className="ad-table">
+                    <thead>
+                      <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Plan</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th className="ad-right">Actions</th>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-gray-600">
-                        No users found matching your filters.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody>
+                      {loading ? (
+                        <tr>
+                          <td colSpan={7}>
+                            <div className="ad-state ad-state--loading">
+                              <div className="ad-spinner" />
+                              <p className="ad-state__sub" style={{ marginTop: 12 }}>Loading users…</p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : filteredRows.length > 0 ? (
+                        filteredRows.map((u, index) => {
+                          const avatar = resolveImageUrl(u.avatarUrl);
+                          const initial = (u.name || "?").slice(0, 1).toUpperCase();
+                          return (
+                            <tr key={u._id}>
+                              <td>
+                                <div className="ad-id">
+                                  {avatar ? (
+                                    <img className="ad-avatar ad-avatar--round" src={avatar} alt={u.name} />
+                                  ) : (
+                                    <div className="ad-avatar ad-avatar--initial ad-avatar--round">{initial}</div>
+                                  )}
+                                  <div className="ad-id__main">
+                                    <Link to={`/profile/${u.publicId || u._id}`} target="_blank" className="ad-id__name">
+                                      {u.name || "Unnamed"}
+                                    </Link>
+                                    <Link to={`/profile/${u.publicId || u._id}`} target="_blank" className="ad-id__sub">
+                                      View profile ↗
+                                    </Link>
+                                  </div>
+                                </div>
+                              </td>
+                              <td>{u.email}</td>
+                              <td><span className={planBadge(u.plan)}>{(u.plan || "free").toUpperCase()}</span></td>
+                              <td style={{ textTransform: "capitalize" }}>{u.role || "user"}</td>
+                              <td><span className={statusBadge(u.status)}>{u.status || "active"}</span></td>
+                              <td>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "-"}</td>
+                              <td className="ad-right">
+                                <div style={{ position: "relative", display: "inline-block" }}>
+                                  <button className="ad-kebab" onClick={() => toggleDropdown(index)} aria-label="Actions">
+                                    {Icon.kebab}
+                                  </button>
+                                  {dropdownOpen === index && (
+                                    <>
+                                      <div className="ad-menu-backdrop" onClick={() => setDropdownOpen(null)} />
+                                      <div className="ad-menu">
+                                        <button className="ad-menu__item ad-menu__item--green" onClick={() => openEdit(u)}>
+                                          {Icon.edit} Edit
+                                        </button>
+                                        <button
+                                          className="ad-menu__item ad-menu__item--amber"
+                                          onClick={() => setStatus(u._id, u.status === "active" ? "suspended" : "active")}
+                                        >
+                                          {Icon.ban} {u.status === "active" ? "Suspend" : "Activate"}
+                                        </button>
+                                        <button className="ad-menu__item ad-menu__item--danger" onClick={() => setStatus(u._id, "banned")}>
+                                          {Icon.gavel} Ban
+                                        </button>
+                                        <div className="ad-menu__sep" />
+                                        <button className="ad-menu__item ad-menu__item--danger" onClick={() => removeUser(u._id)}>
+                                          {Icon.trash} Delete
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={7}>
+                            <div className="ad-state">
+                              {Icon.users}
+                              <p className="ad-state__title">No users found</p>
+                              <p className="ad-state__sub">Try adjusting your filters.</p>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="ad-pager">
+                  <div className="ad-pager__info">Page <b>{page}</b> of <b>{totalPages}</b></div>
+                  <div className="ad-pager__btns">
+                    <button className="ad-pg" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>‹</button>
+                    {pageWindow.map((pNum) => (
+                      <button key={pNum} onClick={() => setPage(pNum)} className={`ad-pg ${pNum === page ? "ad-pg--active" : ""}`}>
+                        {pNum}
+                      </button>
+                    ))}
+                    <button className="ad-pg" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>›</button>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Pagination */}
-            <div className="py-4 px-6 border-t border-gray-200 flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                Showing page <span className="font-medium text-gray-900">{page}</span> of <span className="font-medium text-gray-900">{totalPages}</span>
+            {/* Side rail */}
+            <div className="ad-board__side">
+              {/* Plan split */}
+              <div className="ad-card">
+                <div className="ad-panel__head">
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <span className="ad-panel__ico">{Icon.pie}</span>
+                    <div>
+                      <h3 className="ad-panel__title">Plan split</h3>
+                      <p className="ad-panel__hint">Free vs. premium — this page</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="ad-panel__body">
+                  <Breakdown
+                    items={[
+                      { label: "Free", color: "#93a39a", value: insights.free },
+                      { label: "Premium", color: "#e6920c", value: insights.premium },
+                    ].filter((i) => i.value > 0)}
+                    total={insights.pageCount}
+                  />
+                </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                  className="p-2 rounded-lg bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  <i className="la la-angle-left text-lg"></i>
-                </button>
-                {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-                  let pNum = i + 1;
-                  if (page > 3 && totalPages > 5) {
-                    pNum = page - 2 + i;
-                  }
-                  if (pNum > totalPages) return null;
 
-                  return (
-                    <button
-                      key={pNum}
-                      onClick={() => setPage(pNum)}
-                      className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${pNum === page
-                        ? 'bg-red-600 text-white shadow-lg shadow-red-900/40'
-                        : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
-                        }`}
-                    >
-                      {pNum}
-                    </button>
-                  )
-                })}
+              {/* Account status */}
+              <div className="ad-card">
+                <div className="ad-panel__head">
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <span className="ad-panel__ico">{Icon.pulse}</span>
+                    <div>
+                      <h3 className="ad-panel__title">Account status</h3>
+                      <p className="ad-panel__hint">Health of the current page</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="ad-panel__body">
+                  <Breakdown
+                    items={[
+                      { label: "Active", color: "#16b364", value: insights.active },
+                      { label: "Suspended", color: "#e6920c", value: insights.suspended },
+                      { label: "Banned", color: "#e0394f", value: insights.banned },
+                    ].filter((i) => i.value > 0)}
+                    total={insights.pageCount}
+                  />
+                </div>
+              </div>
 
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                  className="p-2 rounded-lg bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  <i className="la la-angle-right text-lg"></i>
-                </button>
+              {/* Guide */}
+              <div className="ad-card">
+                <div className="ad-panel__head">
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <span className="ad-panel__ico">{Icon.book}</span>
+                    <div>
+                      <h3 className="ad-panel__title">Managing members</h3>
+                      <p className="ad-panel__hint">What each action does</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="ad-panel__body">
+                  <div className="ad-tips">
+                    <div className="ad-tip">
+                      <span className="ad-tip__ico ad-tip__ico--green">{Icon.edit}</span>
+                      <div>
+                        <p className="ad-tip__title">Edit</p>
+                        <p className="ad-tip__sub">Update a member's plan, role, status and profile details.</p>
+                      </div>
+                    </div>
+                    <div className="ad-tip">
+                      <span className="ad-tip__ico ad-tip__ico--amber">{Icon.ban}</span>
+                      <div>
+                        <p className="ad-tip__title">Suspend</p>
+                        <p className="ad-tip__sub">Temporarily blocks access — reversible at any time.</p>
+                      </div>
+                    </div>
+                    <div className="ad-tip">
+                      <span className="ad-tip__ico ad-tip__ico--red">{Icon.gavel}</span>
+                      <div>
+                        <p className="ad-tip__title">Ban</p>
+                        <p className="ad-tip__sub">Permanently bars the account from the platform.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -545,121 +642,73 @@ export default function AdminUsers() {
       {/* Edit Modal */}
       <Modal show={editOpen} onHide={() => setEditOpen(false)} centered contentClassName="bg-transparent border-0">
         {editUser && (
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-gray-900">Edit User</h3>
-                <button onClick={() => setEditOpen(false)} className="text-gray-600 hover:text-gray-900 transition-colors">
-                  <i className="fa fa-times text-lg"></i>
-                </button>
-              </div>
-
-              <form className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                    <input
-                      type="text"
-                      value={editUser.name}
-                      onChange={(e) => setEditUser((u) => ({ ...u, name: e.target.value }))}
-                      className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input
-                      type="email"
-                      value={editUser.email}
-                      onChange={(e) => setEditUser((u) => ({ ...u, email: e.target.value }))}
-                      className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
-                    />
-                  </div>
+          <div className="ad-modal">
+            <div className="ad-modal__head">
+              <h3 className="ad-modal__title">Edit User</h3>
+              <button className="ad-modal__close" onClick={() => setEditOpen(false)}>{Icon.close}</button>
+            </div>
+            <div className="ad-modal__body">
+              <div className="ad-form-grid">
+                <div className="ad-field" style={{ gridColumn: "span 6" }}>
+                  <label className="ad-label">Name</label>
+                  <input className="ad-input" type="text" value={editUser.name}
+                    onChange={(e) => setEditUser((u) => ({ ...u, name: e.target.value }))} />
+                </div>
+                <div className="ad-field" style={{ gridColumn: "span 6" }}>
+                  <label className="ad-label">Email</label>
+                  <input className="ad-input" type="email" value={editUser.email}
+                    onChange={(e) => setEditUser((u) => ({ ...u, email: e.target.value }))} />
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Plan</label>
-                    <select
-                      value={editUser.plan}
-                      onChange={(e) => setEditUser((u) => ({ ...u, plan: e.target.value }))}
-                      className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-gray-900 focus:ring-2 focus:ring-red-500 outline-none"
-                    >
-                      <option value="free" className="bg-white">Free</option>
-                      <option value="premium" className="bg-white">Premium</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                    <select
-                      value={editUser.role}
-                      onChange={(e) => setEditUser((u) => ({ ...u, role: e.target.value }))}
-                      className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-gray-900 focus:ring-2 focus:ring-red-500 outline-none"
-                    >
-                      <option value="user" className="bg-white">User</option>
-                      <option value="admin" className="bg-white">Admin</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select
-                      value={editUser.status}
-                      onChange={(e) => setEditUser((u) => ({ ...u, status: e.target.value }))}
-                      className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-gray-900 focus:ring-2 focus:ring-red-500 outline-none"
-                    >
-                      <option value="active" className="bg-white">Active</option>
-                      <option value="suspended" className="bg-white">Suspended</option>
-                      <option value="banned" className="bg-white">Banned</option>
-                    </select>
-                  </div>
+                <div className="ad-field" style={{ gridColumn: "span 4" }}>
+                  <label className="ad-label">Plan</label>
+                  <select className="ad-select" value={editUser.plan}
+                    onChange={(e) => setEditUser((u) => ({ ...u, plan: e.target.value }))}>
+                    <option value="free">Free</option>
+                    <option value="premium">Premium</option>
+                  </select>
+                </div>
+                <div className="ad-field" style={{ gridColumn: "span 4" }}>
+                  <label className="ad-label">Role</label>
+                  <select className="ad-select" value={editUser.role}
+                    onChange={(e) => setEditUser((u) => ({ ...u, role: e.target.value }))}>
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div className="ad-field" style={{ gridColumn: "span 4" }}>
+                  <label className="ad-label">Status</label>
+                  <select className="ad-select" value={editUser.status}
+                    onChange={(e) => setEditUser((u) => ({ ...u, status: e.target.value }))}>
+                    <option value="active">Active</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="banned">Banned</option>
+                  </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                    <input
-                      type="text"
-                      value={editUser.city}
-                      onChange={(e) => setEditUser((u) => ({ ...u, city: e.target.value }))}
-                      className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-gray-900 focus:ring-2 focus:ring-red-500 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                    <input
-                      type="text"
-                      value={editUser.country}
-                      onChange={(e) => setEditUser((u) => ({ ...u, country: e.target.value }))}
-                      className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-gray-900 focus:ring-2 focus:ring-red-500 outline-none"
-                    />
-                  </div>
+                <div className="ad-field" style={{ gridColumn: "span 6" }}>
+                  <label className="ad-label">City</label>
+                  <input className="ad-input" type="text" value={editUser.city}
+                    onChange={(e) => setEditUser((u) => ({ ...u, city: e.target.value }))} />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Plan Valid Until</label>
-                  <input
-                    type="date"
-                    value={editUser.planValidUntil}
+                <div className="ad-field" style={{ gridColumn: "span 6" }}>
+                  <label className="ad-label">Country</label>
+                  <input className="ad-input" type="text" value={editUser.country}
+                    onChange={(e) => setEditUser((u) => ({ ...u, country: e.target.value }))} />
+                </div>
+                <div className="ad-field" style={{ gridColumn: "span 6" }}>
+                  <label className="ad-label">Plan Valid Until</label>
+                  <input className="ad-input" type="date" value={editUser.planValidUntil}
                     onChange={(e) => setEditUser((u) => ({ ...u, planValidUntil: e.target.value }))}
-                    className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-gray-900 focus:ring-2 focus:ring-red-500 outline-none"
-                    style={{ colorScheme: 'light' }}
-                  />
+                    style={{ colorScheme: "light" }} />
                 </div>
-              </form>
-
-              <div className="flex gap-3 justify-end mt-8">
-                <button
-                  onClick={() => setEditOpen(false)}
-                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 border border-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={saveEdit}
-                  disabled={editing}
-                  className="px-6 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {editing ? <><i className="fa fa-spinner fa-spin mr-2"></i> Saving...</> : "Save Changes"}
-                </button>
               </div>
+            </div>
+            <div className="ad-modal__foot">
+              <button className="ad-btn ad-btn--ghost" onClick={() => setEditOpen(false)}>Cancel</button>
+              <button className="ad-btn ad-btn--primary" onClick={saveEdit} disabled={editing}>
+                {editing ? "Saving…" : "Save Changes"}
+              </button>
             </div>
           </div>
         )}

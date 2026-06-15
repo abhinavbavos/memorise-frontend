@@ -1,158 +1,93 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import "./PublicNav.scss"
 import trophyLogo from "../../assets/images/trophy.png"
-import { SVGICON } from "../../data/constant/theme"
 import { Link } from "react-router-dom"
+
+const MEMORISE_URL = "https://mrise.ca/"
 
 const PublicNav = () => {
   const [mobileMenu, setMobileMenu] = useState(false)
-  const [exploreMenu, setExploreMenu] = useState(false)
+  const close = () => setMobileMenu(false)
+
+  // Close the mobile drawer on Escape.
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && setMobileMenu(false)
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [])
 
   return (
-    <div className="navbarmain">
-      <div className="navbar-content">
-        <nav className="nav">
-          <div className="navcontent">
-            <div className="nav-left">
-              <div className="brandlogo d-flex align-items-center gap-3">
-                <Link to="/" className="d-flex align-items-center">
-                  <img
-                    src={trophyLogo}
-                    alt="Trophy Logo"
-                    style={{ height: "50px", width: "auto" }}
-                  />
-                </Link>
-                <a
-                  href="https://mrise.ca/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-outline-primary btn-sm"
-                  style={{ fontSize: "0.85rem", padding: "6px 12px" }}
-                  title="Visit Memorise website"
-                >
-                  Visit Memorise
-                </a>
-              </div>
-            </div>
+    <header className="pubnav">
+      <div className="pubnav-inner">
+        {/* Brand */}
+        <Link to="/" className="pubnav-brand" onClick={close}>
+          <img src={trophyLogo} alt="Trophy Hub" />
+          <span className="pubnav-wordmark">Trophy Hub</span>
+        </Link>
 
-            <div className="nav-center">
-              <h4 className="nav-title mb-0">Memorise Digital Trophy Hub</h4>
-            </div>
+        {/* Center title */}
+        <span className="pubnav-title">Memorise Digital Trophy Hub</span>
 
-            <div className="nav-right">
-              <ul className="navlist">
-                {/* Desktop Navigation Links */}
-                {/* <li className="navitem desktop-nav">
-                  <Link to="/" className="nav-link">
-                    Home
-                  </Link>
-                </li>
-                <li className="navitem desktop-nav" onClick={() => setExploreMenu(!exploreMenu)}>
-                  <div className="nav-link-dropdown">
-                    <span className="nav-link">
-                      Explore
-                      <i className={`fa fa-chevron-down ms-1 ${exploreMenu ? "rotate" : ""}`}></i>
-                    </span>
-                    <div className={`dropdown-menu-custom ${exploreMenu ? "show" : ""}`}>
-                      <div className="card border-0 mb-0">
-                        <div className="card-body px-0 py-2">
-                          <Link to="/browse-profiles" className="dropdown-item ai-icon">
-                            {SVGICON.UserSvg}
-                            <span className="ms-2">Browse Profiles</span>
-                          </Link>
-                          <Link to="/browse-trophies" className="dropdown-item ai-icon">
-                            {SVGICON.Project}
-                            <span className="ms-2">Browse Trophies</span>
-                          </Link>
-                          <Link to="/leaderboard" className="dropdown-item ai-icon">
-                            <i className="fa fa-trophy"></i>
-                            <span className="ms-2">Leaderboard</span>
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-                <li className="navitem desktop-nav">
-                  <Link to="/about" className="nav-link">
-                    About
-                  </Link>
-                </li>
-                <li className="navitem desktop-nav">
-                  <Link to="/contact" className="nav-link">
-                    Contact
-                  </Link>
-                </li> */}
-
-                {/* Authentication Buttons */}
-                <li className="navitem auth-buttons">
-                  <Link to="/login" className="btn btn-outline-primary me-2 d-flex align-items-center justify-center">
-                    Login
-                  </Link>
-                  <Link to="/register" className="btn btn-primary d-flex align-items-center justify-center">
-                    Sign Up
-                  </Link>
-                </li>
-
-                {/* Mobile Menu Toggle */}
-                <li className="navitem mobile-menu-toggle" onClick={() => setMobileMenu(!mobileMenu)}>
-                  <div className="mobile-menu-btn">
-                    <i className={`fa ${mobileMenu ? "fa-times" : "fa-bars"}`}></i>
-                  </div>
-                  {/* Mobile Menu Dropdown */}
-                  <div className={`mobile-menu-dropdown ${mobileMenu ? "show" : ""}`}>
-                    <div className="card border-0 mb-0">
-                      <div className="card-header py-2">
-                        <div className="text-center">
-                          <h6 className="mb-0">Navigation</h6>
-                        </div>
-                      </div>
-                      <div className="card-body px-0 py-2">
-                        <Link to="/" className="dropdown-item ai-icon">
-                          <i className="fa fa-home"></i>
-                          <span className="ms-2">Home</span>
-                        </Link>
-                        <Link to="/browse-profiles" className="dropdown-item ai-icon">
-                          {SVGICON.UserSvg}
-                          <span className="ms-2">Browse Profiles</span>
-                        </Link>
-                        <Link to="/browse-trophies" className="dropdown-item ai-icon">
-                          {SVGICON.Project}
-                          <span className="ms-2">Browse Trophies</span>
-                        </Link>
-                        <Link to="/leaderboard" className="dropdown-item ai-icon">
-                          <i className="fa fa-trophy"></i>
-                          <span className="ms-2">Leaderboard</span>
-                        </Link>
-                        <Link to="/about" className="dropdown-item ai-icon">
-                          <i className="fa fa-info-circle"></i>
-                          <span className="ms-2">About</span>
-                        </Link>
-                        <Link to="/contact" className="dropdown-item ai-icon">
-                          <i className="fa fa-envelope"></i>
-                          <span className="ms-2">Contact</span>
-                        </Link>
-                      </div>
-                      <div className="card-footer px-0 py-2">
-                        <Link to="/login" className="dropdown-item ai-icon">
-                          <i className="fa fa-sign-in-alt"></i>
-                          <span className="ms-2">Login</span>
-                        </Link>
-                        <Link to="/register" className="dropdown-item ai-icon">
-                          <i className="fa fa-user-plus"></i>
-                          <span className="ms-2">Sign Up</span>
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              </ul>
-            </div>
-          </div>
+        {/* Desktop actions */}
+        <nav className="pubnav-actions" aria-label="Primary">
+          <a
+            href={MEMORISE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pubnav-link"
+          >
+            Visit Memorise
+          </a>
+          <Link to="/login" className="pubnav-btn pubnav-btn-ghost">
+            Login
+          </Link>
+          <Link to="/register" className="pubnav-btn pubnav-btn-solid">
+            Sign Up
+          </Link>
         </nav>
+
+        {/* Mobile toggle */}
+        <button
+          type="button"
+          className={`pubnav-burger ${mobileMenu ? "is-open" : ""}`}
+          aria-label="Toggle navigation menu"
+          aria-expanded={mobileMenu}
+          onClick={() => setMobileMenu((v) => !v)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
       </div>
-    </div>
+
+      {/* Mobile drawer */}
+      <div className={`pubnav-mobile ${mobileMenu ? "is-open" : ""}`}>
+        <Link to="/" className="pubnav-mobile-link" onClick={close}>
+          Home
+        </Link>
+        <a
+          href={MEMORISE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="pubnav-mobile-link"
+          onClick={close}
+        >
+          Visit Memorise
+        </a>
+        <div className="pubnav-mobile-actions">
+          <Link to="/login" className="pubnav-btn pubnav-btn-ghost" onClick={close}>
+            Login
+          </Link>
+          <Link to="/register" className="pubnav-btn pubnav-btn-solid" onClick={close}>
+            Sign Up
+          </Link>
+        </div>
+      </div>
+
+      {/* Backdrop */}
+      {mobileMenu && <div className="pubnav-backdrop" onClick={close} />}
+    </header>
   )
 }
 
-export default PublicNav;
+export default PublicNav

@@ -5,21 +5,91 @@ import api from "../../data/api";
 
 const PAGE_SIZES = [10, 25, 50];
 
-function ReporterCell({ r }) {
-  const name =
-    r?.reporter?.name || r?.reporterName || r?.reporter?.email || "Unknown";
-  const email = r?.reporter?.email || r?.reporterEmail || null;
-  const id = r?.reporter?._id || r?.reporterId || null;
+// ----- inline icons -----
+const Icon = {
+  search: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-3.5-3.5" /></svg>
+  ),
+  refresh: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M23 4v6h-6M1 20v-6h6" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></svg>
+  ),
+  kebab: (
+    <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></svg>
+  ),
+  check: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+  ),
+  x: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+  ),
+  trash: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /></svg>
+  ),
+  shield: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+  ),
+  flag: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><path d="M4 22v-7" /></svg>
+  ),
+  file: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6M8 13h8M8 17h6" /></svg>
+  ),
+  users: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+  ),
+  alert: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><path d="M12 9v4M12 17h.01" /></svg>
+  ),
+  pie: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83" /><path d="M22 12A10 10 0 0 0 12 2v10z" /></svg>
+  ),
+  layers: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5z" /><path d="m3 12 9 5 9-5M3 17l9 5 9-5" /></svg>
+  ),
+  book: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
+  ),
+};
 
+// reason taxonomy → shared color + bucket
+const REASON_META = [
+  { key: "spam",      label: "Spam",            color: "#e6920c", match: (r) => r.includes("spam") },
+  { key: "abuse",     label: "Hate / Violence", color: "#e0394f", match: (r) => r.includes("violence") || r.includes("hate") || r.includes("abuse") },
+  { key: "misinfo",   label: "Misinformation",  color: "#2b7ff5", match: (r) => r.includes("misinfo") },
+  { key: "copyright", label: "Copyright",       color: "#93a39a", match: (r) => r.includes("copyright") },
+  { key: "other",     label: "Other",           color: "#16b364", match: () => true },
+];
+
+function bucketReason(reason) {
+  const r = (reason || "").toLowerCase();
+  return REASON_META.find((m) => m.match(r)) || REASON_META[REASON_META.length - 1];
+}
+
+function reasonBadgeClass(reason) {
+  const r = (reason || "").toLowerCase();
+  if (r.includes("spam")) return "ad-badge ad-badge--amber ad-badge--nodot";
+  if (r.includes("violence") || r.includes("hate")) return "ad-badge ad-badge--red ad-badge--nodot";
+  if (r.includes("misinfo")) return "ad-badge ad-badge--blue ad-badge--nodot";
+  if (r.includes("copyright")) return "ad-badge ad-badge--gray ad-badge--nodot";
+  return "ad-badge ad-badge--green ad-badge--nodot";
+}
+
+function reasonOf(r) {
+  return r?.reason || r?.category || (r?.type === "spam" ? "Spam" : "Reported Content") || "Reported Content";
+}
+function typeOf(r) {
+  return r?.target?.type || r?.type || "-";
+}
+
+function ReporterCell({ r }) {
+  const name = r?.reporter?.name || r?.reporterName || r?.reporter?.email || "Unknown";
+  const email = r?.reporter?.email || r?.reporterEmail || null;
   return (
-    <td className="px-6 py-4">
-      <div className="text-sm font-medium text-gray-900">{name}</div>
+    <td>
+      <div className="ad-cell-strong">{name}</div>
       {email && (
-        <a href={`mailto:${email}`} className="text-sm text-red-600 hover:text-red-700">
-          {email}
-        </a>
+        <a href={`mailto:${email}`} className="ad-link" style={{ fontSize: 12.5 }}>{email}</a>
       )}
-      {id && <p className="text-xs text-gray-500 mt-1">ID: {id}</p>}
     </td>
   );
 }
@@ -27,128 +97,116 @@ function ReporterCell({ r }) {
 function WhenCell({ r }) {
   const d = r?.createdAt ? new Date(r.createdAt) : null;
   return (
-    <td className="px-6 py-4">
-      <div className="text-sm text-gray-900">{d ? d.toLocaleDateString() : "-"}</div>
-      <div className="text-xs text-gray-500">{d ? d.toLocaleTimeString() : ""}</div>
+    <td>
+      <div className="ad-cell-strong" style={{ fontWeight: 500 }}>{d ? d.toLocaleDateString() : "-"}</div>
+      <div className="ad-cell-sub">{d ? d.toLocaleTimeString() : ""}</div>
     </td>
   );
 }
 
 function ReasonCell({ r }) {
-  const reason =
-    r?.reason ||
-    r?.category ||
-    (r?.type === "spam" ? "Spam" : "Reported Content") ||
-    "Reported Content";
-  const badgeClass = reason.toLowerCase().includes("spam")
-    ? "bg-yellow-100 text-yellow-800 border-yellow-200"
-    : reason.toLowerCase().includes("copyright")
-      ? "bg-gray-100 text-gray-800 border-gray-200"
-      : reason.toLowerCase().includes("violence") ||
-        reason.toLowerCase().includes("hate")
-        ? "bg-red-100 text-red-800 border-red-200"
-        : reason.toLowerCase().includes("misinfo")
-          ? "bg-blue-100 text-blue-800 border-blue-200"
-          : "bg-indigo-100 text-indigo-800 border-indigo-200";
+  const reason = reasonOf(r);
   const details = r?.details || r?.message || "";
-
   return (
-    <td className="px-6 py-4">
-      <div className="text-sm text-gray-900">{details || "-"}</div>
-      <span className={`inline-flex mt-1 px-2 py-0.5 rounded text-xs font-medium border ${badgeClass}`}>
-        {reason}
-      </span>
+    <td>
+      <div className="ad-cell-strong" style={{ fontWeight: 500, maxWidth: 320, whiteSpace: "normal" }}>{details || "-"}</div>
+      <span className={reasonBadgeClass(reason)} style={{ marginTop: 6 }}>{reason}</span>
     </td>
   );
 }
 
 function TargetCell({ r }) {
   const isObj = (v) => v && typeof v === "object";
-
-  // normalized target support
   const normalizedType = r?.target?.type || r?.type || "-";
   const normalizedId = r?.target?.id || null;
 
-  // legacy shapes fallback (post)
   const post = r?.post || null;
-  const postId =
-    normalizedId ||
-    r?.postId ||
-    (isObj(post) ? post._id : null) ||
-    r?.targetId ||
-    null;
-
+  const postId = normalizedId || r?.postId || (isObj(post) ? post._id : null) || r?.targetId || null;
   const postOwner =
     (isObj(post) && (post.user || post.userId)) ||
-    (isObj(r?.targetUser) ? r.targetUser : r?.targetUser) ||
-    null;
+    (isObj(r?.targetUser) ? r.targetUser : r?.targetUser) || null;
+  const postOwnerId = isObj(postOwner) ? postOwner._id || postOwner.id || null : postOwner || null;
+  const postOwnerPublicId = isObj(postOwner) ? postOwner.publicId || null : null;
 
-  const postOwnerId = isObj(postOwner)
-    ? postOwner._id || postOwner.id || null
-    : postOwner || null;
-
-  const postOwnerPublicId = isObj(postOwner)
-    ? postOwner.publicId || null
-    : null;
-
-  // legacy shapes fallback (user)
   const user =
     (isObj(r?.user) && r.user) ||
     (isObj(r?.reportedUser) && r.reportedUser) ||
-    (isObj(r?.targetUser) && r.targetUser) ||
-    null;
-
+    (isObj(r?.targetUser) && r.targetUser) || null;
   const userId = isObj(user) ? user._id || user.id || null : r?.userId || null;
   const userPublicId = isObj(user) ? user.publicId || null : null;
 
   const type = normalizedType;
 
   return (
-    <td className="px-6 py-4 text-right">
+    <td className="ad-right">
       {type === "post" ? (
         <>
           {postId ? (
-            <span className="text-sm font-medium text-red-600">
-              Post #{String(postId).slice(-6)}
-            </span>
+            <span className="ad-cell-strong" style={{ color: "var(--ad-green-600)" }}>Post #{String(postId).slice(-6)}</span>
           ) : (
-            <span className="text-sm text-gray-500">Post</span>
+            <span className="ad-cell-sub">Post</span>
           )}
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="ad-cell-sub" style={{ marginTop: 2 }}>
             {postOwnerPublicId || postOwnerId ? (
-              <Link
-                to={`/profile/${postOwnerPublicId || postOwnerId}`}
-                target="_blank"
-                rel="noreferrer"
-                className="text-red-600 hover:text-red-700"
-              >
-                view author
-              </Link>
-            ) : (
-              "by user"
-            )}
+              <Link to={`/profile/${postOwnerPublicId || postOwnerId}`} target="_blank" rel="noreferrer" className="ad-link">view author</Link>
+            ) : ("by user")}
           </p>
         </>
       ) : (
         <>
-          <span className="text-sm font-medium text-red-600">User</span>
-          <p className="text-xs text-gray-500 mt-1">
+          <span className="ad-cell-strong" style={{ color: "var(--ad-green-600)" }}>User</span>
+          <p className="ad-cell-sub" style={{ marginTop: 2 }}>
             {userPublicId || userId ? (
-              <Link
-                to={`/profile/${userPublicId || userId}`}
-                target="_blank"
-                rel="noreferrer"
-                className="text-red-600 hover:text-red-700"
-              >
-                view profile
-              </Link>
-            ) : (
-              "-"
-            )}
+              <Link to={`/profile/${userPublicId || userId}`} target="_blank" rel="noreferrer" className="ad-link">view profile</Link>
+            ) : ("-")}
           </p>
         </>
       )}
     </td>
+  );
+}
+
+// ---- small presentational pieces ----
+function StatTile({ tone, icon, label, value, meta }) {
+  return (
+    <div className="ad-stat">
+      <div className={`ad-stat__icon ad-stat__icon--${tone}`}>{icon}</div>
+      <div className="ad-stat__body">
+        <p className="ad-stat__label">{label}</p>
+        <h3 className="ad-stat__value">{value}</h3>
+        {meta && <p className="ad-stat__meta">{meta}</p>}
+      </div>
+    </div>
+  );
+}
+
+function Breakdown({ items, total }) {
+  const max = Math.max(1, ...items.map((i) => i.value));
+  return (
+    <div className="ad-breakdown">
+      {items.map((it) => (
+        <div className="ad-breakdown__row" key={it.label}>
+          <div className="ad-breakdown__top">
+            <span className="ad-breakdown__label">
+              <span className="ad-breakdown__dot" style={{ background: it.color }} />
+              {it.label}
+            </span>
+            <span className="ad-breakdown__val">{it.value}</span>
+          </div>
+          <div className="ad-breakdown__bar">
+            <div
+              className="ad-breakdown__fill"
+              style={{ width: `${(it.value / max) * 100}%`, background: it.color }}
+            />
+          </div>
+        </div>
+      ))}
+      {total === 0 && (
+        <p className="ad-state__sub" style={{ textAlign: "center", margin: "4px 0 0" }}>
+          Nothing on this page to break down yet.
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -157,10 +215,9 @@ export default function ContentMod() {
   const [rows, setRows] = useState([]);
   const [error, setError] = useState("");
 
-  // backend: status = open | reviewed | all
   const [status, setStatus] = useState("open");
-  const [type, setType] = useState("all"); // all | post | user
-  const [q, setQ] = useState(""); // local text filter
+  const [type, setType] = useState("all");
+  const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
@@ -222,27 +279,23 @@ export default function ContentMod() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, status, type]);
 
-  // Resolve helpers aligned with backend
   const resolveAs = async (report, decision, action) => {
-    // optimistic: remove from current list
     const prev = rows.slice();
     setRows((r) => r.filter((x) => x._id !== report._id));
     setTotal((t) => Math.max(0, t - 1));
 
     try {
       await api.patch(`/admin/reports/${report._id}`, {
-        decision, // 'accept' | 'reject'
-        ...(action ? { action } : {}), // 'remove' (for posts)
+        decision,
+        ...(action ? { action } : {}),
       });
     } catch (e) {
-      // rollback on failure
       setRows(prev);
       setTotal((t) => t + 1);
       alert(e?.response?.data?.error || "Failed to resolve report");
     }
   };
 
-  // UI text search
   const filteredRows = useMemo(() => {
     if (!q) return rows;
     const needle = q.toLowerCase();
@@ -256,254 +309,298 @@ export default function ContentMod() {
     });
   }, [rows, q]);
 
+  // derived insights for the KPI row + side rail (current page of reports)
+  const insights = useMemo(() => {
+    const reasonCounts = Object.fromEntries(REASON_META.map((m) => [m.key, 0]));
+    let posts = 0;
+    let users = 0;
+    rows.forEach((r) => {
+      const t = typeOf(r);
+      if (t === "post") posts += 1;
+      else if (t === "user") users += 1;
+      reasonCounts[bucketReason(reasonOf(r)).key] += 1;
+    });
+    const high = reasonCounts.abuse;
+    const reasonItems = REASON_META.map((m) => ({
+      label: m.label,
+      color: m.color,
+      value: reasonCounts[m.key],
+    })).filter((i) => i.value > 0);
+    return { posts, users, high, reasonItems, pageCount: rows.length };
+  }, [rows]);
+
   const toggleDropdown = (index) => {
     setDropdownOpen(dropdownOpen === index ? null : index);
   };
 
+  const onPage = "this page";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
-          <h3 className="text-3xl font-bold text-gray-900">Content Moderation</h3>
-          <p className="text-gray-600 mt-1">Review and manage reported content</p>
+    <div className="ad-shell ad-page">
+      <div className="ad-wrap ad-stagger" style={{ display: "grid", gap: 22 }}>
+        {/* Hero */}
+        <div className="ad-hero">
+          <div className="ad-hero__lead">
+            <div className="ad-hero__icon">{Icon.shield}</div>
+            <div>
+              <p className="ad-eyebrow">Trust &amp; Safety</p>
+              <h1 className="ad-hero__title">Content Moderation</h1>
+              <p className="ad-hero__sub">Review reported posts and users, and act in one click.</p>
+            </div>
+          </div>
+          <div className="ad-hero__stats">
+            <div className="ad-hero-stat">
+              <p className="ad-hero-stat__label">Open Queue</p>
+              <p className="ad-hero-stat__value">{total}</p>
+            </div>
+            <div className="ad-hero-stat">
+              <p className="ad-hero-stat__label">High Priority</p>
+              <p className="ad-hero-stat__value">{insights.high}</p>
+            </div>
+            <button className="ad-iconbtn" onClick={load} title="Refresh" style={{ alignSelf: "center" }}>{Icon.refresh}</button>
+          </div>
         </div>
 
-        {/* Toolbar */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-4">
-              <div className="relative">
-                <input
-                  type="text"
-                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block p-3 pr-10 placeholder-gray-500 transition-all"
-                  placeholder="Search reports..."
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                />
-                <i className="fa fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+        {/* KPI row */}
+        <div className="ad-kpis">
+          <StatTile tone="green" icon={Icon.flag} label="Total Reports" value={total} meta={<span className="ad-badge ad-badge--gray ad-badge--nodot">{status === "all" ? "All statuses" : `Status: ${status}`}</span>} />
+          <StatTile tone="blue" icon={Icon.file} label="Posts Reported" value={insights.posts} meta={<span className="ad-stat__period">{onPage}</span>} />
+          <StatTile tone="amber" icon={Icon.users} label="Users Reported" value={insights.users} meta={<span className="ad-stat__period">{onPage}</span>} />
+          <StatTile tone="pink" icon={Icon.alert} label="High Priority" value={insights.high} meta={<span className="ad-stat__period">hate / violence</span>} />
+        </div>
+
+        {/* Board: table (main) + insight rail (side) */}
+        <div className="ad-board">
+          <div className="ad-board__main">
+            <div className="ad-card ad-tablecard">
+              {/* Toolbar baked into the card head */}
+              <div className="ad-toolbar">
+                <h3 className="ad-toolbar__title">Report Queue</h3>
+                <div className="ad-search" style={{ flex: "1 1 220px", minWidth: 180 }}>
+                  {Icon.search}
+                  <input
+                    className="ad-input"
+                    type="text"
+                    placeholder="Search reports…"
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                  />
+                </div>
+                <select
+                  className="ad-select"
+                  style={{ width: 160 }}
+                  value={status}
+                  onChange={(e) => { setPage(1); setStatus(e.target.value); }}
+                >
+                  <option value="open">Status: Open</option>
+                  <option value="reviewed">Status: Reviewed</option>
+                  <option value="all">Status: All</option>
+                </select>
+                <select
+                  className="ad-select"
+                  style={{ width: 140 }}
+                  value={type}
+                  onChange={(e) => { setPage(1); setType(e.target.value); }}
+                >
+                  <option value="all">Type: All</option>
+                  <option value="post">Type: Post</option>
+                  <option value="user">Type: User</option>
+                </select>
+                <select
+                  className="ad-select"
+                  style={{ width: 120 }}
+                  value={pageSize}
+                  onChange={(e) => { setPage(1); setPageSize(parseInt(e.target.value, 10)); }}
+                >
+                  {PAGE_SIZES.map((n) => (
+                    <option key={n} value={n}>{n} / page</option>
+                  ))}
+                </select>
+              </div>
+
+              {error && (
+                <div className="ad-alert ad-alert--error"><span>{error}</span></div>
+              )}
+
+              <div className="ad-tablewrap">
+                <table className="ad-table">
+                  <thead>
+                    <tr>
+                      <th>Reported By</th>
+                      <th>Date</th>
+                      <th>Reason / Message</th>
+                      <th className="ad-right">Type</th>
+                      <th className="ad-right">Target</th>
+                      <th className="ad-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr>
+                        <td colSpan={6}>
+                          <div className="ad-state ad-state--loading">
+                            <div className="ad-spinner" />
+                            <p className="ad-state__sub" style={{ marginTop: 12 }}>Loading reports…</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : filteredRows.length ? (
+                      filteredRows.map((r, index) => {
+                        const isPost = r?.type === "post" || r?.target?.type === "post";
+                        return (
+                          <tr key={r._id}>
+                            <ReporterCell r={r} />
+                            <WhenCell r={r} />
+                            <ReasonCell r={r} />
+                            <td className="ad-right">
+                              <span className="ad-badge ad-badge--gray ad-badge--nodot">{r?.type || r?.target?.type || "-"}</span>
+                            </td>
+                            <TargetCell r={r} />
+                            <td className="ad-right">
+                              <div style={{ position: "relative", display: "inline-block" }}>
+                                <button className="ad-kebab" onClick={() => toggleDropdown(index)} aria-label="Actions">
+                                  {Icon.kebab}
+                                </button>
+                                {dropdownOpen === index && (
+                                  <>
+                                    <div className="ad-menu-backdrop" onClick={() => setDropdownOpen(null)} />
+                                    <div className="ad-menu">
+                                      <button
+                                        className="ad-menu__item ad-menu__item--green"
+                                        onClick={() => { setDropdownOpen(null); resolveAs(r, "accept"); }}
+                                      >
+                                        {Icon.check} Accept
+                                      </button>
+                                      <button
+                                        className="ad-menu__item ad-menu__item--danger"
+                                        onClick={() => { setDropdownOpen(null); resolveAs(r, "reject"); }}
+                                      >
+                                        {Icon.x} Reject
+                                      </button>
+                                      {isPost && (
+                                        <>
+                                          <div className="ad-menu__sep" />
+                                          <button
+                                            className="ad-menu__item ad-menu__item--danger"
+                                            onClick={() => { setDropdownOpen(null); resolveAs(r, "accept", "remove"); }}
+                                          >
+                                            {Icon.trash} Remove Post
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={6}>
+                          <div className="ad-state">
+                            {Icon.shield}
+                            <p className="ad-state__title">No reports found</p>
+                            <p className="ad-state__sub">Nothing matches your filters — the queue is clear.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              <div className="ad-pager">
+                <div className="ad-pager__info">Total: <b>{total}</b></div>
+                <div className="ad-pager__btns">
+                  <button className="ad-pg" disabled={page <= 1} onClick={() => setPage(1)}>«</button>
+                  <button className="ad-pg" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>‹ Prev</button>
+                  <span className="ad-pg ad-pg--active">{page} / {totalPages}</span>
+                  <button className="ad-pg" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next ›</button>
+                  <button className="ad-pg" disabled={page >= totalPages} onClick={() => setPage(totalPages)}>»</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Side rail */}
+          <div className="ad-board__side">
+            {/* Reports by reason */}
+            <div className="ad-card">
+              <div className="ad-panel__head">
+                <div style={{ display: "flex", gap: 12 }}>
+                  <span className="ad-panel__ico">{Icon.pie}</span>
+                  <div>
+                    <h3 className="ad-panel__title">Reports by reason</h3>
+                    <p className="ad-panel__hint">Across the current page</p>
+                  </div>
+                </div>
+              </div>
+              <div className="ad-panel__body">
+                <Breakdown items={insights.reasonItems} total={insights.pageCount} />
               </div>
             </div>
 
-            <div className="lg:col-span-2">
-              <select
-                className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block p-3 transition-all"
-                value={status}
-                onChange={(e) => {
-                  setPage(1);
-                  setStatus(e.target.value);
-                }}
-              >
-                <option value="open">Status: Open</option>
-                <option value="reviewed">Status: Reviewed</option>
-                <option value="all">Status: All</option>
-              </select>
+            {/* Reports by type */}
+            <div className="ad-card">
+              <div className="ad-panel__head">
+                <div style={{ display: "flex", gap: 12 }}>
+                  <span className="ad-panel__ico">{Icon.layers}</span>
+                  <div>
+                    <h3 className="ad-panel__title">Target type</h3>
+                    <p className="ad-panel__hint">Posts vs. users</p>
+                  </div>
+                </div>
+              </div>
+              <div className="ad-panel__body">
+                <Breakdown
+                  items={[
+                    { label: "Posts", color: "#2b7ff5", value: insights.posts },
+                    { label: "Users", color: "#e6920c", value: insights.users },
+                  ].filter((i) => i.value > 0)}
+                  total={insights.posts + insights.users}
+                />
+              </div>
             </div>
 
-            <div className="lg:col-span-2">
-              <select
-                className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block p-3 transition-all"
-                value={type}
-                onChange={(e) => {
-                  setPage(1);
-                  setType(e.target.value);
-                }}
-              >
-                <option value="all">Type: All</option>
-                <option value="post">Type: Post</option>
-                <option value="user">Type: User</option>
-              </select>
-            </div>
-
-            <div className="lg:col-span-2">
-              <select
-                className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 block p-3 transition-all"
-                value={pageSize}
-                onChange={(e) => {
-                  setPage(1);
-                  setPageSize(parseInt(e.target.value, 10));
-                }}
-              >
-                {PAGE_SIZES.map((n) => (
-                  <option key={n} value={n}>
-                    {n} / page
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="lg:col-span-2">
-              <button
-                onClick={load}
-                className="w-full p-3 rounded-lg bg-gray-100 text-gray-700 border border-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-all duration-300"
-                title="Refresh"
-              >
-                <i className="fa fa-refresh mr-2"></i> Refresh
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-600 p-4 rounded text-red-800">
-            {error}
-          </div>
-        )}
-
-        {/* Table */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-gray-700">
-              <thead className="bg-gray-50 text-gray-700 uppercase text-xs font-semibold tracking-wider border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-4">Reported By</th>
-                  <th className="px-6 py-4">Date</th>
-                  <th className="px-6 py-4">Reason / Message</th>
-                  <th className="px-6 py-4 text-right">Type</th>
-                  <th className="px-6 py-4 text-right">Target</th>
-                  <th className="px-6 py-4 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-600 animate-pulse">
-                      <i className="fa fa-circle-o-notch fa-spin mr-2"></i> Loading reports...
-                    </td>
-                  </tr>
-                ) : filteredRows.length ? (
-                  filteredRows.map((r, index) => (
-                    <tr key={r._id} className="hover:bg-gray-50 transition-colors">
-                      <ReporterCell r={r} />
-                      <WhenCell r={r} />
-                      <ReasonCell r={r} />
-                      <td className="px-6 py-4 text-right">
-                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-                          {r?.type || r?.target?.type || "-"}
-                        </span>
-                      </td>
-                      <TargetCell r={r} />
-                      <td className="px-6 py-4 text-right">
-                        <div className="relative inline-block">
-                          <button
-                            onClick={() => toggleDropdown(index)}
-                            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-colors"
-                          >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                              <circle cx="12" cy="5" r="2"></circle>
-                              <circle cx="12" cy="12" r="2"></circle>
-                              <circle cx="12" cy="19" r="2"></circle>
-                            </svg>
-                          </button>
-
-                          {dropdownOpen === index && (
-                            <>
-                              <div className="absolute right-0 mt-2 w-48 rounded-xl shadow-2xl bg-white border border-gray-200 z-50 overflow-hidden">
-                                <div className="py-1">
-                                  <button
-                                    onClick={() => {
-                                      setDropdownOpen(null);
-                                      resolveAs(
-                                        r,
-                                        "accept",
-                                        r?.type === "post" || r?.target?.type === "post"
-                                          ? undefined
-                                          : undefined
-                                      );
-                                    }}
-                                    className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50 transition-colors"
-                                  >
-                                    <i className="fa fa-check mr-2"></i> Accept
-                                  </button>
-
-                                  <div className="border-t border-gray-100"></div>
-                                  <button
-                                    onClick={() => {
-                                      setDropdownOpen(null);
-                                      resolveAs(r, "reject");
-                                    }}
-                                    className="w-full text-left px-4 py-2.5 text-sm text-red-700 hover:bg-red-50 transition-colors"
-                                  >
-                                    <i className="fa fa-times mr-2"></i> Reject
-                                  </button>
-
-                                  {(r?.type === "post" || r?.target?.type === "post") && (
-                                    <>
-                                      <div className="border-t border-gray-100"></div>
-                                      <button
-                                        onClick={() => {
-                                          setDropdownOpen(null);
-                                          resolveAs(r, "accept", "remove");
-                                        }}
-                                        className="w-full text-left px-4 py-2.5 text-sm text-red-700 hover:bg-red-50 transition-colors"
-                                      >
-                                        <i className="fa fa-trash mr-2"></i> Remove Post
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                              <div
-                                className="fixed inset-0 z-40"
-                                onClick={() => setDropdownOpen(null)}
-                              ></div>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-600">
-                      <div className="flex flex-col items-center justify-center">
-                        <i className="fa fa-inbox text-4xl mb-3 opacity-50"></i>
-                        <p>No reports found matching your filters.</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="py-4 px-6 border-t border-gray-200 flex items-center justify-between bg-gray-50">
-            <div className="text-sm text-gray-600">
-              Total: <span className="font-medium text-gray-900">{total}</span>
-            </div>
-            <div className="flex gap-2">
-              <button
-                className="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                disabled={page <= 1}
-                onClick={() => setPage(1)}
-              >
-                «
-              </button>
-              <button
-                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                Prev
-              </button>
-              <span className="px-4 py-2 rounded-lg bg-gray-100 text-gray-900 border border-gray-200">
-                Page {page} / {totalPages}
-              </span>
-              <button
-                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next
-              </button>
-              <button
-                className="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                disabled={page >= totalPages}
-                onClick={() => setPage(totalPages)}
-              >
-                »
-              </button>
+            {/* Moderation guide */}
+            <div className="ad-card">
+              <div className="ad-panel__head">
+                <div style={{ display: "flex", gap: 12 }}>
+                  <span className="ad-panel__ico">{Icon.book}</span>
+                  <div>
+                    <h3 className="ad-panel__title">Moderation guide</h3>
+                    <p className="ad-panel__hint">How decisions apply</p>
+                  </div>
+                </div>
+              </div>
+              <div className="ad-panel__body">
+                <div className="ad-tips">
+                  <div className="ad-tip">
+                    <span className="ad-tip__ico ad-tip__ico--green">{Icon.check}</span>
+                    <div>
+                      <p className="ad-tip__title">Accept</p>
+                      <p className="ad-tip__sub">Upholds the report and closes it as a valid violation.</p>
+                    </div>
+                  </div>
+                  <div className="ad-tip">
+                    <span className="ad-tip__ico ad-tip__ico--red">{Icon.x}</span>
+                    <div>
+                      <p className="ad-tip__title">Reject</p>
+                      <p className="ad-tip__sub">Dismisses the report — the content stays live.</p>
+                    </div>
+                  </div>
+                  <div className="ad-tip">
+                    <span className="ad-tip__ico ad-tip__ico--amber">{Icon.trash}</span>
+                    <div>
+                      <p className="ad-tip__title">Remove Post</p>
+                      <p className="ad-tip__sub">Accepts and takes the reported post down in one step.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

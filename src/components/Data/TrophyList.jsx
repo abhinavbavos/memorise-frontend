@@ -1,11 +1,11 @@
 import React from 'react';
-import { Badge } from 'react-bootstrap';
 import LightGallery from "lightgallery/react";
 import "lightgallery/css/lightgallery.css";
 import "lightgallery/css/lg-zoom.css";
 import "lightgallery/css/lg-thumbnail.css";
 import { IMAGES } from "../../data/constant/theme";
 import { resolveImageUrl } from "../../utils/urlHelpers";
+import { Ic } from "./profileIcons";
 
 const TrophyList = ({
     trophies,
@@ -21,25 +21,6 @@ const TrophyList = ({
             ? trophies
             : trophies.filter((t) => t.category === selectedTrophyCategory);
 
-    const getTrophyBadgeVariant = (category) => {
-        switch (category) {
-            case "Academic":
-            case "Academics":
-                return "primary";
-            case "Sports":
-                return "danger";
-            case "Leadership":
-                return "warning";
-            case "Community":
-            case "Certificates":
-            case "Awards":
-            case "Internship":
-                return "success";
-            default:
-                return "secondary";
-        }
-    };
-
     const handleDownloadImage = async (imageUrl, title) => {
         try {
             const response = await fetch(imageUrl);
@@ -47,10 +28,9 @@ const TrophyList = ({
             const blob = await response.blob();
 
             // Determine MIME type from URL FIRST (priority), then from blob
-            let mimeType = "image/png"; // default
+            let mimeType = "image/png";
             let ext = "png";
 
-            // Check URL extension first (priority)
             if (imageUrl.includes(".jpg") || imageUrl.includes(".jpeg")) {
                 mimeType = "image/jpeg";
                 ext = "jpg";
@@ -64,19 +44,14 @@ const TrophyList = ({
                 mimeType = "image/webp";
                 ext = "webp";
             } else if (blob.type && blob.type !== "application/octet-stream") {
-                // Use blob type only if URL didn't match and blob type is valid
                 mimeType = blob.type;
                 ext = blob.type.split("/")[1] || "png";
             }
 
-            // Create blob with correct MIME type
             const typedBlob = new Blob([blob], { type: mimeType });
-
-            // Create filename
             const timestamp = new Date().toISOString().slice(0, 10);
             const filename = `${(title || "trophy").replace(/\s+/g, "-")}-${timestamp}.${ext}`;
 
-            // Download
             const url = URL.createObjectURL(typedBlob);
             const a = document.createElement("a");
             a.href = url;
@@ -92,142 +67,94 @@ const TrophyList = ({
     };
 
     return (
-        <div className="col-lg-12">
-            <div className="card mb-4 border-0 bg-transparent shadow-none">
-                <div className="card-header border-0 pb-0 bg-transparent px-0">
-                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-center w-100 mb-3">
-                        <div className="d-flex flex-wrap gap-2">
-                            {trophyCategories.map((category, index) => (
-                                <Badge
-                                    key={index}
-                                    pill
-                                    bg={
-                                        selectedTrophyCategory === category
-                                            ? getTrophyBadgeVariant(category)
-                                            : "light"
-                                    }
-                                    className={`cursor-pointer px-3 py-2 ${selectedTrophyCategory === category
-                                        ? ""
-                                        : "text-dark border bg-white"
-                                        }`}
-                                    style={{ cursor: "pointer", fontSize: "0.85rem" }}
-                                    onClick={() => setSelectedTrophyCategory(category)}
-                                >
-                                    {category}
-                                </Badge>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="card-body px-0 pt-0">
-                    {filteredTrophies?.length > 0 ? (
-                        <LightGallery
-                            onInit={onInit}
-                            speed={500}
-                            plugins={[]}
-                            selector=".gallery-item"
-                            elementClassNames="d-flex flex-column gap-4"
+        <div>
+            {/* category filter */}
+            {trophyCategories?.length > 1 && (
+                <div className="pf-filterbar">
+                    {trophyCategories.map((category, index) => (
+                        <button
+                            key={index}
+                            className={`pf-fbtn ${selectedTrophyCategory === category ? "pf-fbtn--active" : ""}`}
+                            onClick={() => setSelectedTrophyCategory(category)}
                         >
-                            {filteredTrophies.map((item, index) => (
-                                <div key={item._id || index} className="card shadow-sm border-0">
-                                    <div className="card-body p-3">
-                                        {/* Post Header: Title + Category */}
-                                        <div className="d-flex justify-content-between align-items-center mb-2">
-                                            <div className="d-flex align-items-center gap-2">
-                                                <h6 className="mb-0 fw-bold text-dark fs-5">
-                                                    {item.title || "Achievement"}
-                                                </h6>
-                                            </div>
-                                            <div className="d-flex align-items-center gap-2">
-                                                <Badge
-                                                    bg={getTrophyBadgeVariant(item.category)}
-                                                    className="px-2 py-1"
-                                                >
-                                                    {item.category}
-                                                </Badge>
-                                                {onDelete && (
-                                                    <button
-                                                        className="btn btn-sm btn-light text-danger border-0 rounded-circle p-2"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation(); // prevent lightbox
-                                                            const trophyId = item._id || item.id || item._postId;
-                                                            if (!trophyId) {
-                                                                console.warn("Trophy has no ID:", item);
-                                                                return;
-                                                            }
-                                                            onDelete(trophyId);
-                                                        }}
-                                                        title="Delete Trophy"
-                                                    >
-                                                        <i className="fa fa-trash"></i>
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Post Content: Description */}
-                                        {(item.description || item.year) && (
-                                            <p className="card-text text-secondary mb-3">
-                                                {item.description || `Achieved in ${item.year}`}
-                                            </p>
-                                        )}
-
-                                        {/* Post Image (Clickable for Lightbox) */}
-                                        <div className="position-relative">
-                                            <a
-                                                href={resolveImageUrl(item.fileUrl || item.thumbUrl || item.imageUrl || item.image) || IMAGES.Profile3}
-                                                data-src={resolveImageUrl(item.fileUrl || item.thumbUrl || item.imageUrl || item.image) || IMAGES.Profile3}
-                                                className="gallery-item d-block rounded overflow-hidden bg-light cursor-pointer border"
-                                                style={{ maxHeight: "500px", display: "flex", justifyContent: "center", alignItems: "center" }}
-                                            >
-                                                <img
-                                                    src={resolveImageUrl(item.thumbUrl || item.fileUrl || item.imageUrl || item.image) || "/placeholder.svg"}
-                                                    alt={item.title}
-                                                    className="img-fluid"
-                                                    style={{ objectFit: "contain", maxHeight: "500px", width: "100%" }}
-                                                />
-                                            </a>
-                                            <button
-                                                className="btn btn-sm btn-primary position-absolute"
-                                                style={{
-                                                    bottom: "10px",
-                                                    right: "10px",
-                                                    borderRadius: "50%",
-                                                    width: "40px",
-                                                    height: "40px",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    padding: "0"
-                                                }}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    const imageUrl = resolveImageUrl(item.fileUrl || item.thumbUrl || item.imageUrl || item.image);
-                                                    handleDownloadImage(imageUrl, item.title);
-                                                }}
-                                                title="Download image"
-                                            >
-                                                <i className="fa fa-download" style={{ fontSize: "16px" }}></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </LightGallery>
-                    ) : (
-                        <div className="text-center py-5">
-                            <div className="mb-3">
-                                <i className="fa fa-trophy text-muted" style={{ fontSize: "3rem" }}></i>
-                            </div>
-                            <h5 className="text-muted">No trophies found</h5>
-                            <p className="text-muted small">
-                                Try selecting a different category or upload a new achievement.
-                            </p>
-                        </div>
-                    )}
+                            {category}
+                        </button>
+                    ))}
                 </div>
-            </div>
+            )}
+
+            {filteredTrophies?.length > 0 ? (
+                <LightGallery
+                    onInit={onInit}
+                    speed={500}
+                    plugins={[]}
+                    selector=".gallery-item"
+                    elementClassNames="pf-trophies"
+                >
+                    {filteredTrophies.map((item, index) => {
+                        const img = resolveImageUrl(item.fileUrl || item.thumbUrl || item.imageUrl || item.image) || IMAGES.Profile3;
+                        const trophyId = item._id || item.id || item._postId;
+                        return (
+                            <div key={item._id || index} className="pf-trophy">
+                                <a
+                                    href={img}
+                                    data-src={img}
+                                    className="gallery-item pf-trophy__media"
+                                >
+                                    {item.category && <span className="pf-trophy__cat pf-tagbadge">{item.category}</span>}
+                                    <img src={img} alt={item.title || "Achievement"} />
+                                </a>
+
+                                <div className="pf-trophy__body">
+                                    <h3 className="pf-trophy__title">{item.title || "Achievement"}</h3>
+                                    {item.year && (
+                                        <span className="pf-trophy__meta">{Ic.calendar}{item.year}</span>
+                                    )}
+                                    {item.description && (
+                                        <p className="pf-trophy__desc">{item.description}</p>
+                                    )}
+                                </div>
+
+                                <div className="pf-trophy__foot">
+                                    <button
+                                        className="ad-btn ad-btn--primary ad-btn--sm"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDownloadImage(img, item.title);
+                                        }}
+                                        title="Download image"
+                                    >
+                                        {Ic.download} Download
+                                    </button>
+                                    {onDelete && (
+                                        <button
+                                            className="ad-btn ad-btn--ghost ad-btn--sm"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (!trophyId) {
+                                                    console.warn("Trophy has no ID:", item);
+                                                    return;
+                                                }
+                                                onDelete(trophyId);
+                                            }}
+                                            title="Delete trophy"
+                                            style={{ flex: "0 0 auto" }}
+                                        >
+                                            {Ic.trash}
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </LightGallery>
+            ) : (
+                <div className="ad-state">
+                    {Ic.trophy}
+                    <p className="ad-state__title">No trophies yet</p>
+                    <p className="ad-state__sub">Try a different category or upload a new achievement.</p>
+                </div>
+            )}
         </div>
     );
 };

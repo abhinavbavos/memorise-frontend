@@ -1,0 +1,1193 @@
+/* =========================================================================
+   Memorise — Admin / Dashboard design system
+   A single, cohesive "premium SaaS" theme: soft mint canvas, floating white
+   cards, emerald accent. Inspired by the nginap reference dashboards.
+   Loaded once (App.jsx) AFTER the vendor template so it wins the cascade.
+   ========================================================================= */
+
+:root {
+  /* ---- canvas + ink ---- */
+  --ad-bg: #eef4f1;
+  --ad-bg-2: #f3f8f5;
+  --ad-surface: #ffffff;
+  --ad-ink: #16241d;
+  --ad-ink-soft: #5a6b62;
+  --ad-ink-faint: #93a39a;
+  --ad-line: #e6eee9;
+  --ad-line-soft: #f1f6f3;
+
+  /* ---- emerald brand ---- */
+  --ad-green: #16b364;
+  --ad-green-600: #109a55;
+  --ad-green-700: #0c7e45;
+  --ad-green-soft: #e4f6ec;
+  --ad-grad: linear-gradient(135deg, #1ecb7b 0%, #11a45e 100%);
+  --ad-grad-soft: linear-gradient(135deg, #eafaf1 0%, #e0f5ea 100%);
+
+  /* ---- accent pastels (stat chips / charts) ---- */
+  --ad-blue: #2b7ff5;   --ad-blue-soft: #e8f1fe;
+  --ad-pink: #ec4a82;   --ad-pink-soft: #fde8f0;
+  --ad-amber: #e6920c;  --ad-amber-soft: #fdf1d9;
+  --ad-violet: #7c5cff; --ad-violet-soft: #efeaff;
+
+  /* ---- status ---- */
+  --ad-up: #0f9b54;
+  --ad-down: #e0394f;
+
+  /* ---- unify the vendor template brand to emerald ---- */
+  --primary: #16b364;
+  --primary-hover: #109a55;
+  --rgba-primary-5: rgba(22, 179, 100, 0.5);
+  --rgba-primary-1: rgba(22, 179, 100, 0.1);
+  --bs-primary: #16b364;
+  --bs-primary-rgb: 22, 179, 100;
+
+  /* ---- soft, diffuse elevation (the key to "premium") ---- */
+  --ad-shadow: 0 14px 38px -20px rgba(18, 70, 45, 0.20);
+  --ad-shadow-sm: 0 6px 18px -12px rgba(18, 70, 45, 0.22);
+  --ad-shadow-lg: 0 28px 64px -26px rgba(18, 70, 45, 0.32);
+  --ad-radius: 20px;
+  --ad-radius-sm: 14px;
+}
+
+/* =========================================================================
+   1. SHELL — background + entrance animation for any admin route content
+   ========================================================================= */
+
+.content-body {
+  background: var(--ad-bg);
+}
+
+@keyframes ad-fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes ad-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes ad-pop {
+  0%   { opacity: 0; transform: translateY(16px) scale(.985); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes ad-spin { to { transform: rotate(360deg); } }
+@keyframes ad-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+.ad-page { animation: ad-fade-in 0.4s ease both; }
+
+/* Stagger helper: children pop in sequence. */
+.ad-stagger > * { animation: ad-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.ad-stagger > *:nth-child(1) { animation-delay: 0.02s; }
+.ad-stagger > *:nth-child(2) { animation-delay: 0.07s; }
+.ad-stagger > *:nth-child(3) { animation-delay: 0.12s; }
+.ad-stagger > *:nth-child(4) { animation-delay: 0.17s; }
+.ad-stagger > *:nth-child(5) { animation-delay: 0.22s; }
+.ad-stagger > *:nth-child(6) { animation-delay: 0.27s; }
+.ad-stagger > *:nth-child(7) { animation-delay: 0.32s; }
+.ad-stagger > *:nth-child(8) { animation-delay: 0.37s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ad-page, .ad-stagger > *, .adash, .adash * { animation: none !important; }
+}
+
+/* =========================================================================
+   2. SIDEBAR — override the vendor `.deznav` / `.metismenu` template
+   Clean rail, rounded items, solid emerald active pill.
+   ========================================================================= */
+
+.deznav {
+  background: var(--ad-surface) !important;
+  border-right: 1px solid var(--ad-line) !important;
+  box-shadow: none !important;
+  width: 17rem !important;
+}
+
+.deznav .deznav-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #cfe0d6 transparent;
+}
+.deznav .deznav-scroll::-webkit-scrollbar { width: 6px; }
+.deznav .deznav-scroll::-webkit-scrollbar-thumb { background: #d4e3da; border-radius: 6px; }
+
+.deznav-scroll > .logo {
+  padding: 22px 22px 8px !important;
+  display: flex;
+  align-items: center;
+}
+.deznav-scroll > .logo img {
+  height: 42px !important;
+  width: auto !important;
+  object-fit: contain;
+}
+
+.deznav .metismenu {
+  width: 100% !important;
+  height: auto !important;
+  padding: 6px 14px 24px;
+  gap: 4px;
+}
+
+.deznav .metismenu .menu-title {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 20px 12px 8px !important;
+  color: var(--ad-ink-faint) !important;
+}
+
+.deznav .metismenu > li { margin: 1px 0; }
+
+.deznav .metismenu > li > a {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px !important;
+  margin: 0;
+  border-radius: 14px;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--ad-ink-soft) !important;
+  width: 100%;
+  position: relative;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+.deznav .metismenu > li > a .menu-icon {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: var(--ad-line-soft);
+  color: var(--ad-ink-soft);
+  margin: 0 !important;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+.deznav .metismenu > li > a .menu-icon svg {
+  width: 18px !important; height: 18px !important; margin: 0 !important;
+}
+.deznav .metismenu > li > a .menu-icon svg path { fill: currentColor !important; opacity: 1 !important; }
+
+.deznav .metismenu > li > a .nav-text { flex: 1; white-space: nowrap; }
+
+.deznav .metismenu > li:hover > a,
+.deznav .metismenu > li:focus > a {
+  background: var(--ad-line-soft) !important;
+  color: var(--ad-ink) !important;
+  transform: translateX(2px);
+}
+.deznav .metismenu > li:hover > a .menu-icon {
+  background: var(--ad-green-soft);
+  color: var(--ad-green-600);
+}
+.deznav .metismenu > li:hover > a svg path,
+.deznav .metismenu > li:focus > a svg path { fill: currentColor !important; opacity: 1 !important; }
+
+/* active item — solid emerald pill */
+.deznav .metismenu > li.mm-active > a,
+.deznav .metismenu > li > a.mm-active {
+  background: var(--ad-grad) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 14px 26px -12px rgba(17, 164, 94, 0.78);
+}
+.deznav .metismenu > li.mm-active > a .menu-icon,
+.deznav .metismenu > li > a.mm-active .menu-icon {
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+.deznav .metismenu > li.mm-active > a .menu-icon svg path,
+.deznav .metismenu > li > a.mm-active .menu-icon svg path { fill: #fff !important; opacity: 1 !important; }
+.deznav .metismenu > li.mm-active > a:after { display: none !important; }
+
+/* =========================================================================
+   3. HEADER — override `.admin-header-wrapper` → clean + emerald
+   ========================================================================= */
+
+.admin-header-wrapper {
+  position: sticky;
+  top: 0;
+  left: auto !important;
+  right: auto !important;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.82) !important;
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--ad-line) !important;
+  box-shadow: 0 1px 0 rgba(18, 70, 45, 0.02) !important;
+}
+
+.admin-navigation { height: 68px; }
+
+.admin-brand-title {
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+  color: var(--ad-ink) !important;
+}
+
+.sideMenuToggle {
+  border-radius: 12px !important;
+  background: var(--ad-line-soft) !important;
+  border: 1px solid var(--ad-line) !important;
+  transition: all 0.2s ease !important;
+}
+.sideMenuToggle:hover {
+  background: var(--ad-green-soft) !important;
+  border-color: #bfe7d0 !important;
+}
+.sideMenuToggle:hover .hamburger .line { background: var(--ad-green-600) !important; }
+
+.admin-user-avatar {
+  border-radius: 13px !important;
+  background: var(--ad-grad-soft) !important;
+  color: var(--ad-green-600) !important;
+  border: 1px solid var(--ad-line) !important;
+}
+.admin-user-avatar:hover {
+  border-color: #bfe7d0 !important;
+  color: var(--ad-green-600) !important;
+  transform: translateY(-1px);
+}
+.admin-user-avatar img { border-radius: 12px !important; }
+
+.admin-user-dropdown { border-radius: 16px !important; border-color: var(--ad-line) !important; box-shadow: var(--ad-shadow) !important; }
+.admin-dropdown-card, .admin-dropdown-header { border-radius: 16px 16px 0 0 !important; }
+.admin-dropdown-header { background: var(--ad-grad-soft) !important; border-color: var(--ad-line) !important; }
+.admin-profile-avatar { background: var(--ad-grad) !important; border-radius: 12px !important; }
+.admin-user-profile h6 { color: var(--ad-ink) !important; }
+.admin-dropdown-link { color: var(--ad-ink-soft) !important; }
+.admin-dropdown-link:hover { background: var(--ad-green-soft) !important; color: var(--ad-green-700) !important; }
+.admin-dropdown-link svg { color: inherit; }
+.admin-dropdown-footer { background: var(--ad-line-soft) !important; border-color: var(--ad-line) !important; }
+.admin-logout-btn:hover { background: #fdeef0 !important; color: var(--ad-down) !important; }
+
+/* =========================================================================
+   4. PRIMITIVES — shell, header, cards, buttons, inputs, badges
+   Shared across every admin page (`ad-*` namespace).
+   ========================================================================= */
+
+.ad-shell {
+  min-height: calc(100vh - 68px);
+  background: var(--ad-bg);
+  padding: 28px;
+  font-family: "Poppins", "Lato", system-ui, -apple-system, sans-serif;
+  color: var(--ad-ink);
+}
+.ad-wrap { max-width: 1320px; margin: 0 auto; }
+
+.ad-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; margin-bottom: 24px;
+}
+.ad-head__title {
+  font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin: 0;
+  color: var(--ad-ink);
+}
+.ad-head__sub { margin: 5px 0 0; font-size: 14px; color: var(--ad-ink-soft); }
+.ad-head__tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.ad-card {
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-line);
+  border-radius: var(--ad-radius);
+  box-shadow: var(--ad-shadow);
+}
+.ad-card__head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 20px 24px; border-bottom: 1px solid var(--ad-line);
+}
+.ad-card__title { font-size: 16px; font-weight: 600; margin: 0; color: var(--ad-ink); }
+.ad-card__hint { font-size: 13px; color: var(--ad-ink-faint); margin: 3px 0 0; }
+.ad-card__body { padding: 24px; }
+.ad-card__foot {
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+  padding: 18px 24px; border-top: 1px solid var(--ad-line);
+}
+
+.ad-grid { display: grid; gap: 18px; }
+
+/* eyebrow chip used beside card titles */
+.ad-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 600; color: var(--ad-ink-soft);
+  background: var(--ad-line-soft); border: 1px solid var(--ad-line);
+  border-radius: 999px; padding: 6px 13px;
+}
+.ad-chip svg { width: 14px; height: 14px; }
+.ad-chip--green { color: var(--ad-green-700); background: var(--ad-green-soft); border-color: #cdeedb; }
+
+/* ---- Buttons ---- */
+.ad-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 0; border-radius: 13px; padding: 11px 18px;
+  font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease, color .2s ease, border-color .2s ease;
+  font-family: inherit;
+}
+.ad-btn svg { width: 17px; height: 17px; }
+.ad-btn--primary {
+  color: #fff; background: var(--ad-grad);
+  box-shadow: 0 14px 26px -12px rgba(17, 164, 94, 0.7);
+}
+.ad-btn--primary:hover { transform: translateY(-2px); box-shadow: 0 18px 32px -12px rgba(17, 164, 94, 0.8); }
+.ad-btn--primary:active { transform: translateY(0); }
+.ad-btn--primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.ad-btn--ghost {
+  color: var(--ad-ink-soft); background: var(--ad-surface);
+  border: 1px solid var(--ad-line);
+}
+.ad-btn--ghost:hover { background: var(--ad-line-soft); color: var(--ad-ink); border-color: #d8e5dd; }
+.ad-btn--danger { color: #fff; background: linear-gradient(135deg, #f4607a, #e0394f); box-shadow: 0 14px 26px -12px rgba(224,57,79,.6); }
+.ad-btn--danger:hover { transform: translateY(-2px); }
+.ad-btn--sm { padding: 8px 14px; font-size: 13px; border-radius: 11px; }
+
+/* square icon button (refresh, etc.) */
+.ad-iconbtn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 42px; height: 42px; border-radius: 13px;
+  background: var(--ad-surface); border: 1px solid var(--ad-line);
+  color: var(--ad-ink-soft); cursor: pointer;
+  transition: all 0.2s ease;
+}
+.ad-iconbtn svg { width: 18px; height: 18px; }
+.ad-iconbtn:hover { background: var(--ad-green-soft); color: var(--ad-green-600); border-color: #bfe7d0; }
+.ad-iconbtn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ---- Inputs ---- */
+.ad-field { display: flex; flex-direction: column; gap: 7px; }
+.ad-label { font-size: 13px; font-weight: 600; color: var(--ad-ink-soft); }
+.ad-input, .ad-select {
+  width: 100%;
+  background: var(--ad-bg-2);
+  border: 1px solid var(--ad-line);
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 14px;
+  color: var(--ad-ink);
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background .2s;
+}
+.ad-input::placeholder { color: var(--ad-ink-faint); }
+.ad-input:focus, .ad-select:focus {
+  background: var(--ad-surface);
+  border-color: var(--ad-green);
+  box-shadow: 0 0 0 4px rgba(22, 179, 100, 0.13);
+}
+.ad-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2393a39a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 38px;
+  cursor: pointer;
+}
+
+/* search input with leading icon */
+.ad-search { position: relative; display: flex; align-items: center; }
+.ad-search svg { position: absolute; left: 14px; width: 17px; height: 17px; color: var(--ad-ink-faint); pointer-events: none; }
+.ad-search .ad-input { padding-left: 40px; }
+
+/* ---- Toggle switch ---- */
+.ad-switch { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
+.ad-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.ad-switch__track {
+  width: 46px; height: 26px; border-radius: 999px;
+  background: #d4e0d9; transition: background 0.2s ease; flex-shrink: 0;
+}
+.ad-switch__track::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease;
+}
+.ad-switch input:checked + .ad-switch__track { background: var(--ad-grad); }
+.ad-switch input:checked + .ad-switch__track::after { transform: translateX(20px); }
+
+/* ---- Status badges ---- */
+.ad-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0.02em;
+  padding: 4px 11px; border-radius: 999px; text-transform: capitalize;
+}
+.ad-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.ad-badge--green  { color: #0f9b54; background: var(--ad-green-soft); }
+.ad-badge--amber  { color: #c77f00; background: var(--ad-amber-soft); }
+.ad-badge--red    { color: #e0394f; background: var(--ad-pink-soft); }
+.ad-badge--blue   { color: #2b7ff5; background: var(--ad-blue-soft); }
+.ad-badge--violet { color: #6d4aff; background: var(--ad-violet-soft); }
+.ad-badge--gray   { color: var(--ad-ink-soft); background: var(--ad-line-soft); }
+.ad-badge--solid-dot::before { display: inline-block; }
+.ad-badge--nodot::before { display: none; }
+
+/* ---- Spinner / skeleton ---- */
+.ad-spinner {
+  width: 26px; height: 26px;
+  border: 3px solid rgba(22,179,100,.2); border-top-color: var(--ad-green);
+  border-radius: 50%; margin: 0 auto; animation: ad-spin .7s linear infinite;
+}
+.ad-skel {
+  border-radius: 8px;
+  background: linear-gradient(90deg, #eef3f0 25%, #f6faf8 37%, #eef3f0 63%);
+  background-size: 400% 100%; animation: ad-shimmer 1.3s ease infinite;
+}
+
+/* ---- Avatar ---- */
+.ad-avatar {
+  width: 42px; height: 42px; border-radius: 12px; object-fit: cover;
+  flex-shrink: 0; background: var(--ad-green-soft);
+}
+.ad-avatar--initial {
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px; color: #fff; background: var(--ad-grad);
+}
+.ad-avatar--round { border-radius: 50%; }
+
+/* =========================================================================
+   5. STAT TILE — KPI card (used on Payments + reusable)
+   ========================================================================= */
+.ad-stat {
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-line);
+  border-radius: var(--ad-radius);
+  box-shadow: var(--ad-shadow);
+  padding: 22px;
+  display: flex; align-items: flex-start; gap: 16px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.ad-stat:hover { transform: translateY(-3px); box-shadow: var(--ad-shadow-lg); }
+.ad-stat__icon {
+  width: 50px; height: 50px; border-radius: 14px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.ad-stat__icon svg { width: 24px; height: 24px; }
+.ad-stat__icon i { font-size: 21px; }
+.ad-stat__icon--green  { background: var(--ad-green-soft); color: var(--ad-green-600); }
+.ad-stat__icon--blue   { background: var(--ad-blue-soft);  color: var(--ad-blue); }
+.ad-stat__icon--amber  { background: var(--ad-amber-soft); color: var(--ad-amber); }
+.ad-stat__icon--pink   { background: var(--ad-pink-soft);  color: var(--ad-pink); }
+.ad-stat__icon--violet { background: var(--ad-violet-soft);color: var(--ad-violet); }
+.ad-stat__body { min-width: 0; flex: 1; }
+.ad-stat__label { font-size: 13px; font-weight: 500; color: var(--ad-ink-soft); margin: 0 0 4px; }
+.ad-stat__value { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; margin: 0; color: var(--ad-ink); }
+.ad-stat__meta { margin: 8px 0 0; font-size: 12px; }
+
+/* =========================================================================
+   6. DATA TABLE — clean, premium table for list pages
+   ========================================================================= */
+.ad-tablecard { overflow: hidden; }
+.ad-tablewrap { overflow-x: auto; }
+.ad-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ad-table thead th {
+  text-align: left;
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ad-ink-faint);
+  padding: 15px 20px;
+  background: var(--ad-bg-2);
+  border-bottom: 1px solid var(--ad-line);
+  white-space: nowrap;
+}
+.ad-table thead th.ad-right { text-align: right; }
+.ad-table tbody td { padding: 16px 20px; border-bottom: 1px solid var(--ad-line-soft); color: var(--ad-ink-soft); vertical-align: middle; }
+.ad-table tbody tr:last-child td { border-bottom: 0; }
+.ad-table tbody tr { transition: background 0.15s ease; }
+.ad-table tbody tr:hover { background: var(--ad-bg-2); }
+.ad-table td.ad-right { text-align: right; }
+.ad-cell-strong { font-size: 14px; font-weight: 600; color: var(--ad-ink); }
+.ad-cell-sub { font-size: 12.5px; color: var(--ad-ink-faint); margin-top: 2px; }
+.ad-cell-mono { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 12.5px; color: var(--ad-ink-faint); }
+
+/* user identity cell */
+.ad-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.ad-id__main { min-width: 0; }
+.ad-id__name { font-size: 14px; font-weight: 600; color: var(--ad-ink); text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+a.ad-id__name:hover { color: var(--ad-green-600); }
+.ad-id__sub { font-size: 12.5px; color: var(--ad-ink-faint); }
+a.ad-id__sub:hover { color: var(--ad-green-600); }
+
+.ad-link { color: var(--ad-green-600); text-decoration: none; font-weight: 600; }
+.ad-link:hover { color: var(--ad-green-700); text-decoration: underline; }
+
+/* row action kebab + menu */
+.ad-kebab {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 10px;
+  border: 0; background: transparent; color: var(--ad-ink-soft); cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ad-kebab:hover { background: var(--ad-line-soft); color: var(--ad-green-600); }
+.ad-menu {
+  position: absolute; right: 0; top: calc(100% + 6px);
+  width: 190px; z-index: 60;
+  background: var(--ad-surface); border: 1px solid var(--ad-line);
+  border-radius: 14px; box-shadow: var(--ad-shadow-lg); overflow: hidden;
+  padding: 6px;
+  animation: ad-pop 0.16s ease both;
+}
+.ad-menu__item {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 9px 12px; border: 0; border-radius: 10px; background: transparent;
+  font-size: 13.5px; font-weight: 500; color: var(--ad-ink-soft); cursor: pointer; text-align: left;
+  text-decoration: none; transition: background 0.15s, color 0.15s;
+}
+.ad-menu__item svg { width: 16px; height: 16px; flex-shrink: 0; }
+.ad-menu__item i { width: 16px; text-align: center; }
+.ad-menu__item:hover { background: var(--ad-line-soft); color: var(--ad-ink); }
+.ad-menu__item--green:hover { background: var(--ad-green-soft); color: var(--ad-green-700); }
+.ad-menu__item--amber:hover { background: var(--ad-amber-soft); color: #c77f00; }
+.ad-menu__item--danger { color: var(--ad-down); }
+.ad-menu__item--danger:hover { background: var(--ad-pink-soft); color: var(--ad-down); }
+.ad-menu__sep { height: 1px; background: var(--ad-line); margin: 5px 2px; }
+.ad-menu-backdrop { position: fixed; inset: 0; z-index: 55; }
+
+/* =========================================================================
+   7. PAGINATION
+   ========================================================================= */
+.ad-pager {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 16px 22px; border-top: 1px solid var(--ad-line); flex-wrap: wrap;
+}
+.ad-pager__info { font-size: 13px; color: var(--ad-ink-soft); }
+.ad-pager__info b { color: var(--ad-ink); }
+.ad-pager__btns { display: flex; align-items: center; gap: 6px; }
+.ad-pg {
+  min-width: 36px; height: 36px; padding: 0 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 10px; border: 1px solid var(--ad-line); background: var(--ad-surface);
+  color: var(--ad-ink-soft); font-size: 13.5px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ad-pg:hover:not(:disabled) { background: var(--ad-green-soft); color: var(--ad-green-700); border-color: #bfe7d0; }
+.ad-pg:disabled { opacity: 0.45; cursor: not-allowed; }
+.ad-pg--active { background: var(--ad-grad); color: #fff; border-color: transparent; box-shadow: 0 10px 20px -10px rgba(17,164,94,.7); }
+.ad-pg--active:hover { color: #fff; background: var(--ad-grad); }
+
+/* =========================================================================
+   8. ALERTS + EMPTY/LOADING STATES
+   ========================================================================= */
+.ad-alert {
+  display: flex; align-items: center; gap: 10px;
+  margin: 18px; padding: 14px 16px; border-radius: 14px;
+  font-size: 13.5px; font-weight: 500;
+}
+.ad-alert svg { width: 18px; height: 18px; flex-shrink: 0; }
+.ad-alert--error { color: #c2293c; background: var(--ad-pink-soft); border: 1px solid #f8d3da; }
+
+.ad-state { padding: 56px 20px; text-align: center; color: var(--ad-ink-faint); }
+.ad-state svg { width: 40px; height: 40px; opacity: 0.6; margin-bottom: 12px; }
+.ad-state__title { font-size: 15px; font-weight: 600; color: var(--ad-ink-soft); margin: 0 0 4px; }
+.ad-state__sub { font-size: 13px; margin: 0; }
+.ad-state--loading { color: var(--ad-ink-soft); }
+
+/* =========================================================================
+   9. MODAL — themed react-bootstrap modal body
+   ========================================================================= */
+.ad-modal {
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-line);
+  border-radius: var(--ad-radius);
+  box-shadow: var(--ad-shadow-lg);
+  overflow: hidden;
+}
+.ad-modal__head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 20px 24px; border-bottom: 1px solid var(--ad-line);
+}
+.ad-modal__title { font-size: 18px; font-weight: 700; color: var(--ad-ink); margin: 0; }
+.ad-modal__close {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 10px; border: 0; background: var(--ad-line-soft);
+  color: var(--ad-ink-soft); cursor: pointer; transition: all 0.15s;
+}
+.ad-modal__close:hover { background: var(--ad-pink-soft); color: var(--ad-down); }
+.ad-modal__body { padding: 24px; }
+.ad-modal__foot {
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+  padding: 18px 24px; border-top: 1px solid var(--ad-line); background: var(--ad-bg-2);
+}
+.ad-codeblock {
+  background: var(--ad-bg-2); border: 1px solid var(--ad-line); border-radius: 14px;
+  padding: 16px; max-height: 56vh; overflow: auto;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 12.5px;
+  color: var(--ad-ink-soft); white-space: pre-wrap; line-height: 1.55;
+}
+
+/* =========================================================================
+   10. Settings-specific helpers
+   ========================================================================= */
+.ad-form-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
+.ad-form-grid .ad-field { grid-column: span 12; }
+
+.ad-settings-avatar {
+  width: 92px; height: 92px; border-radius: 24px;
+  padding: 4px; background: var(--ad-grad); flex-shrink: 0;
+  box-shadow: 0 16px 32px -16px rgba(17, 164, 94, 0.7);
+}
+.ad-settings-avatar img {
+  width: 100%; height: 100%; border-radius: 20px;
+  object-fit: cover; background: #fff; display: block;
+}
+
+.ad-maint {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  width: 100%; padding: 14px 16px;
+  border: 1px solid var(--ad-line); border-radius: 14px;
+  background: var(--ad-bg-2);
+}
+
+/* =========================================================================
+   11. LAYOUT HELPERS — list-page grids
+   ========================================================================= */
+.ad-cols { display: grid; gap: 18px; }
+.ad-cols--stats-recent { grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); align-items: start; }
+.ad-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-content: start; }
+.ad-filters { display: grid; grid-template-columns: 1.7fr 1fr 1fr 1fr; gap: 14px; align-items: end; }
+.ad-filters--users { grid-template-columns: 1.7fr 1fr 1fr 1fr auto; }
+
+/* recently-subscribed mini list (sidebar card) */
+.ad-mini { display: flex; flex-direction: column; gap: 8px; padding: 16px; max-height: 420px; overflow-y: auto; }
+.ad-mini__row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 12px; border-radius: 14px; background: var(--ad-bg-2);
+  border: 1px solid var(--ad-line); transition: background .15s, border-color .15s;
+}
+.ad-mini__row:hover { background: var(--ad-green-soft); border-color: #cdeedb; }
+.ad-mini__main { min-width: 0; flex: 1; }
+.ad-mini__name { font-size: 13.5px; font-weight: 600; color: var(--ad-ink); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ad-mini__name a { color: inherit; text-decoration: none; }
+.ad-mini__name a:hover { color: var(--ad-green-600); }
+.ad-mini__sub { font-size: 12px; color: var(--ad-ink-faint); margin: 1px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ad-mini__time { font-size: 11.5px; color: var(--ad-ink-faint); flex-shrink: 0; }
+
+/* ---- responsive ---- */
+@media (max-width: 1100px) {
+  .ad-form-grid .ad-field,
+  .ad-form-grid > div { grid-column: span 12 !important; }
+  .ad-cols--stats-recent { grid-template-columns: 1fr; }
+  .ad-filters, .ad-filters--users { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  .ad-stats { grid-template-columns: 1fr; }
+  .ad-filters, .ad-filters--users { grid-template-columns: 1fr; }
+}
+@media (max-width: 575px) {
+  .ad-shell { padding: 16px; }
+  .ad-table thead th, .ad-table tbody td { padding: 13px 14px; }
+}
+
+/* =========================================================================
+   12. PREMIUM v2 — signature elements layer
+   Loaded last so it wins the cascade. Elevates the clean base into a rich,
+   high-end SaaS look: gradient hero banners, decorated stat tiles, glassy
+   in-hero controls, refined cards + tables, eyebrow labels.
+   ========================================================================= */
+
+/* ---- 12.1 Eyebrow / section label ---- */
+.ad-eyebrow {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ad-green-700);
+  margin: 0 0 10px;
+}
+.ad-eyebrow::before {
+  content: ""; width: 18px; height: 2px; border-radius: 2px;
+  background: var(--ad-grad);
+}
+
+/* ---- 12.2 HERO banner header (the signature element) ---- */
+.ad-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 26px;
+  padding: 30px 32px;
+  background:
+    radial-gradient(120% 160% at 100% 0%, #2bd589 0%, rgba(43, 213, 137, 0) 46%),
+    linear-gradient(118deg, #0c7e45 0%, #11a45e 42%, #16b364 100%);
+  color: #fff;
+  box-shadow: 0 28px 56px -26px rgba(12, 100, 60, 0.78);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 22px; flex-wrap: wrap;
+  isolation: isolate;
+}
+/* soft glow orb */
+.ad-hero::before {
+  content: ""; position: absolute; z-index: -1;
+  right: -60px; top: -90px; width: 280px; height: 280px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.30), transparent 64%);
+  pointer-events: none;
+}
+/* faint dotted texture */
+.ad-hero::after {
+  content: ""; position: absolute; z-index: -1; inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1.1px, transparent 1.2px);
+  background-size: 22px 22px;
+  -webkit-mask-image: linear-gradient(105deg, rgba(0,0,0,0.5), transparent 62%);
+          mask-image: linear-gradient(105deg, rgba(0,0,0,0.5), transparent 62%);
+  pointer-events: none;
+}
+.ad-hero__lead { display: flex; align-items: center; gap: 18px; min-width: 0; }
+.ad-hero__icon {
+  flex-shrink: 0; width: 60px; height: 60px; border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.ad-hero__icon svg { width: 28px; height: 28px; color: #fff; }
+.ad-hero__title {
+  font-size: 29px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.1;
+  margin: 0; color: #fff;
+}
+.ad-hero__sub { margin: 6px 0 0; font-size: 14px; color: rgba(255, 255, 255, 0.86); }
+.ad-hero__tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; z-index: 1; }
+.ad-hero .ad-eyebrow { color: rgba(255, 255, 255, 0.85); margin-bottom: 7px; }
+.ad-hero .ad-eyebrow::before { background: rgba(255, 255, 255, 0.7); }
+
+/* glassy controls when placed inside a hero.
+   NB: use background-COLOR (not the `background` shorthand) so the base
+   `.ad-select` no-repeat + right-aligned chevron position survive — the
+   shorthand would reset them and tile the chevron across the control. */
+.ad-hero .ad-select,
+.ad-hero .ad-input {
+  background-color: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.30);
+  color: #fff;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.ad-hero .ad-input::placeholder { color: rgba(255, 255, 255, 0.72); }
+.ad-hero .ad-select option { color: var(--ad-ink); }
+.ad-hero .ad-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+}
+.ad-hero .ad-select:focus,
+.ad-hero .ad-input:focus {
+  background-color: rgba(255, 255, 255, 0.26);
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.18);
+}
+.ad-hero .ad-iconbtn {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.30);
+  color: #fff;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.ad-hero .ad-iconbtn:hover { background: rgba(255, 255, 255, 0.30); color: #fff; border-color: rgba(255,255,255,.5); }
+.ad-hero .ad-label { color: rgba(255, 255, 255, 0.86); }
+.ad-hero .ad-btn--ghost {
+  background: rgba(255, 255, 255, 0.16); color: #fff; border-color: rgba(255, 255, 255, 0.30);
+}
+.ad-hero .ad-btn--ghost:hover { background: rgba(255, 255, 255, 0.28); color: #fff; }
+.ad-hero .ad-btn--primary {
+  background: #fff; color: var(--ad-green-700);
+  box-shadow: 0 14px 26px -12px rgba(0, 0, 0, 0.35);
+}
+.ad-hero .ad-btn--primary:hover { background: #f3fbf6; }
+
+/* inline KPI pills that can live in the hero */
+.ad-hero__stats { display: flex; gap: 12px; flex-wrap: wrap; z-index: 1; }
+.ad-hero-stat {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 16px; padding: 12px 18px; min-width: 120px;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.ad-hero-stat__label { font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: rgba(255, 255, 255, 0.82); margin: 0; }
+.ad-hero-stat__value { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 3px 0 0; color: #fff; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 640px) {
+  .ad-hero { padding: 22px; border-radius: 22px; }
+  .ad-hero__title { font-size: 23px; }
+  .ad-hero__icon { width: 50px; height: 50px; border-radius: 15px; }
+  .ad-hero__tools, .ad-hero__stats { width: 100%; }
+}
+
+/* ---- 12.3 Card refinement: layered shadow + hairline ring + hover lift ---- */
+.ad-card {
+  box-shadow:
+    0 1px 2px rgba(18, 70, 45, 0.04),
+    0 18px 44px -26px rgba(18, 70, 45, 0.26);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+.ad-tablecard:hover,
+.ad-card:hover {
+  box-shadow:
+    0 1px 2px rgba(18, 70, 45, 0.05),
+    0 26px 56px -28px rgba(18, 70, 45, 0.34);
+}
+/* gradient hairline accent on card heads */
+.ad-card__head { position: relative; }
+.ad-card__head::after {
+  content: ""; position: absolute; left: 24px; bottom: -1px; width: 42px; height: 2px;
+  border-radius: 2px; background: var(--ad-grad);
+}
+
+/* ---- 12.4 Stat tile v2: gradient icon, decorative glow, accent bar ---- */
+.ad-stat {
+  position: relative;
+  overflow: hidden;
+  padding-left: 24px;
+}
+.ad-stat::before {
+  content: ""; position: absolute; left: 0; top: 18px; bottom: 18px; width: 4px;
+  border-radius: 0 4px 4px 0; background: var(--ad-grad); opacity: 0.9;
+}
+.ad-stat::after {
+  content: ""; position: absolute; right: -36px; top: -36px; width: 120px; height: 120px;
+  border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(22, 179, 100, 0.10), transparent 70%);
+}
+.ad-stat__icon { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5); }
+.ad-stat__icon--green  { background: var(--ad-grad); color: #fff; box-shadow: 0 10px 20px -10px rgba(17,164,94,.8); }
+.ad-stat__icon--blue   { background: linear-gradient(135deg, #4f9bff, #2b7ff5); color: #fff; box-shadow: 0 10px 20px -10px rgba(43,127,245,.7); }
+.ad-stat__icon--amber  { background: linear-gradient(135deg, #f7b23b, #e6920c); color: #fff; box-shadow: 0 10px 20px -10px rgba(230,146,12,.7); }
+.ad-stat__icon--pink   { background: linear-gradient(135deg, #f76aa0, #ec4a82); color: #fff; box-shadow: 0 10px 20px -10px rgba(236,74,130,.7); }
+.ad-stat__icon--violet { background: linear-gradient(135deg, #9b81ff, #7c5cff); color: #fff; box-shadow: 0 10px 20px -10px rgba(124,92,255,.7); }
+.ad-stat__value { font-variant-numeric: tabular-nums; }
+
+/* ---- 12.5 Table v2: subtle header gradient + emerald hover accent ---- */
+.ad-table thead th {
+  background: linear-gradient(180deg, #f2f8f5, var(--ad-bg-2));
+}
+.ad-table tbody tr { position: relative; }
+.ad-table tbody tr:hover { background: var(--ad-green-soft); }
+.ad-table tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--ad-green); }
+
+/* ---- 12.6 Button sheen on primary ---- */
+.ad-btn--primary { position: relative; overflow: hidden; }
+.ad-btn--primary::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.28) 50%, transparent 70%);
+  transform: translateX(-120%); transition: transform 0.6s ease;
+}
+.ad-btn--primary:hover::after { transform: translateX(120%); }
+
+/* ---- 12.7 Filter card on list pages: soften into the page ---- */
+.ad-filters .ad-search .ad-input { background: var(--ad-surface); }
+
+/* =========================================================================
+   13. SIDEBAR v2 — clean, self-contained rail (`ad-side`)
+   Replaces the fragile vendor `.deznav`/`.metismenu` styling so nothing in
+   the template can fight it. Used by components/SideBar/SideBar.jsx.
+   ========================================================================= */
+/* widths — single source of truth for the rail + its layout slot */
+:root {
+  --ad-side-w: 268px;          /* expanded */
+  --ad-side-w-collapsed: 84px; /* slim icon rail */
+}
+
+/* In-flow spacer: reserves the slim rail's footprint so the expanded rail
+   overlays the page instead of pushing the content column sideways. */
+.ad-side__slot {
+  flex-shrink: 0;
+  width: var(--ad-side-w-collapsed);
+  align-self: stretch;
+}
+
+.ad-side {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: var(--ad-side-w);
+  display: flex;
+  flex-direction: column;
+  background: var(--ad-surface);
+  border-right: 1px solid var(--ad-line);
+  box-shadow: 14px 0 40px -34px rgba(18, 70, 45, 0.5);
+  z-index: 60; /* above the sticky header so the expanded panel isn't clipped */
+  font-family: "Poppins", "Lato", system-ui, -apple-system, sans-serif;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #cfe0d6 transparent;
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.28s ease;
+}
+.ad-side::-webkit-scrollbar { width: 6px; }
+.ad-side::-webkit-scrollbar-thumb { background: #d4e3da; border-radius: 6px; }
+.ad-side--hidden { display: none; }
+
+/* ---- collapsed (slim icon rail) ---- */
+.ad-side--collapsed { width: var(--ad-side-w-collapsed); overflow-y: hidden; }
+/* fade out the promo text block */
+.ad-side--collapsed .ad-side__promo > div {
+  opacity: 0;
+  pointer-events: none;
+}
+/* The link label must drop OUT OF FLOW (not just fade) — if it keeps its
+   flex width the invisible text shoves every icon to the left instead of
+   letting it center in the rail. */
+.ad-side--collapsed .ad-side__text {
+  opacity: 0;
+  pointer-events: none;
+  flex: 0 0 0;
+  width: 0;
+  margin: 0;
+  overflow: hidden;
+}
+/* section labels collapse into a subtle centered divider between groups */
+.ad-side--collapsed .ad-side__label {
+  height: 1px; width: 26px; padding: 0; margin: 12px auto;
+  overflow: hidden; color: transparent;
+  background: var(--ad-line); border-radius: 1px;
+}
+.ad-side--collapsed .ad-side__nav > .ad-side__label:first-child { display: none; }
+/* center each icon as a neat square; kill the inter-item gap so the
+   active/hover pill hugs the icon instead of stretching the whole rail */
+.ad-side--collapsed .ad-side__nav { padding-left: 0; padding-right: 0; gap: 6px; }
+.ad-side--collapsed .ad-side__link {
+  gap: 0; justify-content: center;
+  width: 48px; margin: 0 auto; padding: 6px;
+}
+.ad-side--collapsed .ad-side__link:hover { transform: none; }
+.ad-side--collapsed .ad-side__brand { justify-content: center; padding-left: 0; padding-right: 0; }
+.ad-side--collapsed .ad-side__logo { height: 34px; }
+.ad-side--collapsed .ad-side__foot { padding-left: 0; padding-right: 0; }
+.ad-side--collapsed .ad-side__promo { justify-content: center; padding: 12px 0; background: transparent; border-color: transparent; }
+
+/* ---- expanded (hover) — lift it above the page with a deeper shadow ---- */
+.ad-side--expanded { box-shadow: 18px 0 60px -28px rgba(18, 70, 45, 0.55); }
+
+/* labels / text animate their fade so the expand feels smooth */
+.ad-side__text,
+.ad-side__label,
+.ad-side__promo > div { transition: opacity 0.18s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ad-side { transition: none; }
+  .ad-side__text, .ad-side__label, .ad-side__promo > div { transition: none; }
+}
+
+/* brand */
+.ad-side__brand {
+  display: flex; align-items: center;
+  padding: 22px 24px 16px;
+  margin-bottom: 4px;
+}
+.ad-side__brandlink { display: inline-flex; align-items: center; }
+.ad-side__logo { height: 40px; width: auto; object-fit: contain; display: block; }
+
+/* nav */
+.ad-side__nav {
+  flex: 1;
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 6px 16px 20px;
+}
+.ad-side__label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ad-ink-faint);
+  margin: 0; padding: 18px 12px 7px;
+}
+.ad-side__nav > .ad-side__label:first-child { padding-top: 6px; }
+
+.ad-side__link {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: 14px;
+  font-size: 14px; font-weight: 500; color: var(--ad-ink-soft);
+  text-decoration: none; white-space: nowrap;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+.ad-side__ico {
+  flex-shrink: 0; width: 36px; height: 36px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ad-line-soft); color: var(--ad-ink-soft);
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.ad-side__ico svg { width: 19px; height: 19px; }
+.ad-side__text {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+}
+
+.ad-side__link:hover {
+  background: var(--ad-line-soft); color: var(--ad-ink);
+  transform: translateX(2px);
+}
+.ad-side__link:hover .ad-side__ico { background: var(--ad-green-soft); color: var(--ad-green-600); }
+
+.ad-side__link--active,
+.ad-side__link--active:hover {
+  background: var(--ad-grad); color: #fff; font-weight: 600;
+  transform: none;
+  box-shadow: 0 16px 28px -14px rgba(17, 164, 94, 0.85);
+}
+.ad-side__link--active .ad-side__ico {
+  background: rgba(255, 255, 255, 0.22); color: #fff;
+}
+
+/* footer promo card */
+.ad-side__foot { padding: 14px 16px 20px; margin-top: auto; }
+.ad-side__promo {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px; border-radius: 16px;
+  background: var(--ad-grad-soft);
+  border: 1px solid #d3eede;
+}
+.ad-side__promo-ico {
+  flex-shrink: 0; width: 38px; height: 38px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ad-grad); color: #fff;
+  box-shadow: 0 10px 18px -10px rgba(17, 164, 94, 0.8);
+}
+.ad-side__promo-ico svg { width: 19px; height: 19px; }
+.ad-side__promo-title { margin: 0; font-size: 13px; font-weight: 700; color: var(--ad-ink); }
+.ad-side__promo-sub { margin: 1px 0 0; font-size: 11.5px; color: var(--ad-green-700); }
+
+/* admin content column fills the rest, edge to edge */
+.content-body.d-flex { align-items: stretch; min-height: 100vh; }
+.adash { width: 100%; max-width: none; }
+
+/* off-canvas drawer scrim (mobile only; toggled by the header hamburger) */
+.ad-side__scrim { display: none; }
+
+@media (max-width: 768px) {
+  /* Touch has no hover, so the rail becomes an off-canvas drawer: hidden by
+     default (slid off the left edge) and revealed only when the header
+     hamburger sets `.ad-side--open`. Stop reserving the slim slot too. */
+  .ad-side__slot { width: 0; }
+  .ad-side,
+  .ad-side--collapsed {
+    width: var(--ad-side-w);
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 18px 0 60px -28px rgba(18, 70, 45, 0.55);
+  }
+  .ad-side--open { transform: translateX(0); }
+  .ad-side__scrim--show {
+    display: block;
+    position: fixed; inset: 0; z-index: 55;
+    background: rgba(16, 36, 29, 0.45);
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  }
+  .ad-side--collapsed .ad-side__text,
+  .ad-side--collapsed .ad-side__label,
+  .ad-side--collapsed .ad-side__promo > div { opacity: 1; pointer-events: auto; }
+  .ad-side--collapsed .ad-side__text { flex: 1; width: auto; }
+  .ad-side--collapsed .ad-side__label {
+    height: auto; width: auto; padding: 18px 12px 7px; margin: 0;
+    color: var(--ad-ink-faint); background: none; border-radius: 0;
+  }
+  .ad-side--collapsed .ad-side__nav > .ad-side__label:first-child { display: block; }
+  .ad-side--collapsed .ad-side__nav { padding-left: 16px; padding-right: 16px; gap: 3px; }
+  .ad-side--collapsed .ad-side__link {
+    gap: 12px; justify-content: flex-start;
+    width: auto; margin: 0; padding: 10px 12px;
+  }
+  .ad-side--collapsed .ad-side__brand { justify-content: flex-start; padding-left: 24px; padding-right: 24px; }
+  .ad-side--collapsed .ad-side__foot { padding-left: 16px; padding-right: 16px; }
+  .ad-side--collapsed .ad-side__promo { justify-content: flex-start; padding: 14px; background: var(--ad-grad-soft); border-color: #d3eede; }
+}
+
+/* =========================================================================
+   14. LIST-PAGE LAYOUT v3 — fill the width (2026-06-10)
+   The list pages (Content / Users) were single centered tables floating in a
+   1320px column, leaving the canvas blank left + right and feeling "minimal".
+   This layer (a) widens the column so it fills wide screens, and (b) adds the
+   building blocks for a real dashboard: a KPI tile row + a two-column "board"
+   (main table column + a sticky insight side-rail with breakdown bars + tips).
+   Append-only so the cascade wins.
+   ========================================================================= */
+
+/* (a) widen the centered column — fills screens up to ~2k, no blank sides */
+.ad-wrap { max-width: 1760px; }
+
+/* --- 14.1 KPI tile row --------------------------------------------------- */
+.ad-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+@media (max-width: 1200px) { .ad-kpis { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px)  { .ad-kpis { grid-template-columns: 1fr; } }
+
+/* compact trend/meta chip used under a KPI value */
+.ad-stat__delta {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .01em;
+  padding: 3px 9px; border-radius: 999px;
+}
+.ad-stat__delta svg { width: 12px; height: 12px; }
+.ad-stat__delta--up   { color: var(--ad-up);   background: var(--ad-green-soft); }
+.ad-stat__delta--down { color: var(--ad-down);  background: var(--ad-pink-soft); }
+.ad-stat__delta--flat { color: var(--ad-ink-soft); background: var(--ad-line-soft); }
+
+/* --- 14.2 Board: main column + sticky side rail -------------------------- */
+.ad-board {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 350px;
+  gap: 22px;
+  align-items: start;
+}
+.ad-board__main { min-width: 0; display: grid; gap: 22px; align-content: start; }
+.ad-board__side { display: grid; gap: 22px; position: sticky; top: 96px; }
+@media (max-width: 1180px) {
+  .ad-board { grid-template-columns: 1fr; }
+  .ad-board__side { position: static; }
+}
+
+/* --- 14.3 Panel (slim card head used in the side rail) ------------------- */
+.ad-panel__head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+  padding: 18px 20px 4px;
+}
+.ad-panel__head .ad-panel__ico {
+  flex-shrink: 0; width: 34px; height: 34px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ad-green-soft); color: var(--ad-green-600);
+}
+.ad-panel__head .ad-panel__ico svg { width: 17px; height: 17px; }
+.ad-panel__title { font-size: 14.5px; font-weight: 700; margin: 0; color: var(--ad-ink); }
+.ad-panel__hint { font-size: 12px; color: var(--ad-ink-faint); margin: 2px 0 0; }
+.ad-panel__body { padding: 16px 20px 20px; }
+
+/* --- 14.4 Breakdown bars ------------------------------------------------- */
+.ad-breakdown { display: flex; flex-direction: column; gap: 15px; }
+.ad-breakdown__row { display: grid; gap: 8px; }
+.ad-breakdown__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ad-breakdown__label { display: inline-flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 500; color: var(--ad-ink-soft); }
+.ad-breakdown__dot { width: 10px; height: 10px; border-radius: 3.5px; flex-shrink: 0; }
+.ad-breakdown__val { font-size: 13.5px; font-weight: 700; color: var(--ad-ink); font-variant-numeric: tabular-nums; }
+.ad-breakdown__bar { height: 9px; border-radius: 999px; background: var(--ad-line-soft); overflow: hidden; }
+.ad-breakdown__fill {
+  height: 100%; border-radius: 999px; min-width: 5px;
+  background: var(--ad-grad);
+  animation: ad-grow-x .7s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes ad-grow-x { from { width: 0 !important; opacity: .4; } }
+
+/* --- 14.5 Tips / guide list ---------------------------------------------- */
+.ad-tips { display: flex; flex-direction: column; gap: 14px; }
+.ad-tip { display: flex; gap: 12px; align-items: flex-start; }
+.ad-tip__ico {
+  flex-shrink: 0; width: 32px; height: 32px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.ad-tip__ico svg { width: 16px; height: 16px; }
+.ad-tip__ico--green { background: var(--ad-green-soft); color: var(--ad-green-600); }
+.ad-tip__ico--amber { background: var(--ad-amber-soft); color: var(--ad-amber); }
+.ad-tip__ico--red   { background: var(--ad-pink-soft);  color: var(--ad-down); }
+.ad-tip__ico--blue  { background: var(--ad-blue-soft);  color: var(--ad-blue); }
+.ad-tip__title { margin: 0; font-size: 13px; font-weight: 600; color: var(--ad-ink); }
+.ad-tip__sub { margin: 3px 0 0; font-size: 12px; color: var(--ad-ink-faint); line-height: 1.5; }
+
+/* --- 14.6 Toolbar row baked into a table card head ----------------------- */
+.ad-toolbar {
+  display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+  padding: 18px 20px; border-bottom: 1px solid var(--ad-line);
+}
+.ad-toolbar__title { font-size: 16px; font-weight: 700; margin: 0 auto 0 0; color: var(--ad-ink); white-space: nowrap; }
+
+/* a soft total chip for table heads */
+.ad-count {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 700; color: var(--ad-green-700);
+  background: var(--ad-green-soft); border: 1px solid #cdeedb;
+  border-radius: 999px; padding: 5px 12px; white-space: nowrap;
+}

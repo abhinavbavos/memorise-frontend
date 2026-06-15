@@ -97,6 +97,12 @@
   border: 1px solid #e5e7eb;
 }
 
+/* The hamburger only drives the off-canvas drawer, which exists on mobile;
+   the desktop rail is hover-driven, so hide the toggle there. */
+@media (min-width: 769px) {
+  .sideMenuToggle { display: none; }
+}
+
 .sideMenuToggle:hover {
   border-color: #dc2626;
   background: #fee2e2;

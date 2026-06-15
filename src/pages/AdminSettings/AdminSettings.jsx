@@ -157,179 +157,187 @@ export default function AdminSettings() {
 
   if (loading) {
     return (
-      <div className="container py-4">
-        <div className="text-muted">Loading settings…</div>
+      <div className="ad-shell">
+        <div className="ad-wrap" style={{ maxWidth: 940 }}>
+          <div className="ad-card" style={{ padding: 48, textAlign: "center" }}>
+            <div className="ad-spinner" />
+            <p style={{ marginTop: 14, color: "var(--ad-ink-faint)", fontSize: 14 }}>
+              Loading settings…
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container py-4">
-      {/* Profile (avatar) */}
-      <div className="card mb-4">
-        <div className="card-header d-flex align-items-center justify-content-between">
-          <h5 className="mb-0">Admin Profile</h5>
-        </div>
-        <div className="card-body d-flex align-items-center gap-3">
-          <img
-            src={resolveImageUrl(avatarUrl) || "/placeholder.svg"}
-            alt="avatar"
-            style={{
-              width: 84,
-              height: 84,
-              borderRadius: "50%",
-              objectFit: "cover",
-              border: "2px solid #eee",
-            }}
-          />
-          <div className="d-flex align-items-center gap-2">
-            {/* keep input hidden; use the button to open it (prevents accidental file-reopen) */}
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/png,image/jpeg"
-              className="d-none"
-              onChange={onPickAvatar}
-              disabled={uploadingAvatar}
-            />
-            <button
-              className="btn btn-outline-secondary"
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              disabled={uploadingAvatar}
-            >
-              {uploadingAvatar ? "Uploading…" : "Change Avatar"}
-            </button>
+    <div className="ad-shell ad-page">
+      <div className="ad-wrap ad-stagger" style={{ maxWidth: 940, display: "grid", gap: 20 }}>
+        {/* Page header */}
+        <div className="ad-hero">
+          <div className="ad-hero__lead">
+            <div className="ad-hero__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </div>
+            <div>
+              <p className="ad-eyebrow">Configuration</p>
+              <h1 className="ad-hero__title">Settings</h1>
+              <p className="ad-hero__sub">
+                Manage your profile, platform configuration and premium plan.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Site Settings */}
-      <form className="card" onSubmit={saveSettings}>
-        <div className="card-header">
-          <h5 className="mb-0">Site Settings</h5>
-        </div>
-        <div className="card-body">
-          <div className="row g-3">
-            <div className="col-md-6">
-              <label className="form-label">Site Name</label>
-              <input
-                className="form-control"
-                value={settings.siteName || ""}
-                onChange={(e) =>
-                  setSettings((s) => ({ ...s, siteName: e.target.value }))
-                }
-                placeholder="Memorise"
+        {/* Profile (avatar) */}
+        <div className="ad-card">
+          <div className="ad-card__head">
+            <div>
+              <h3 className="ad-card__title">Admin Profile</h3>
+              <p className="ad-card__hint">Your photo appears across the admin area</p>
+            </div>
+          </div>
+          <div className="ad-card__body" style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+            <div className="ad-settings-avatar">
+              <img
+                src={resolveImageUrl(avatarUrl) || "/placeholder.svg"}
+                alt="avatar"
               />
             </div>
-            <div className="col-md-6">
-              <label className="form-label">Support Email</label>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <p style={{ margin: 0, fontWeight: 600, fontSize: 16 }}>
+                {me?.name || "Admin User"}
+              </p>
+              <p style={{ margin: "2px 0 14px", color: "var(--ad-ink-faint)", fontSize: 13.5 }}>
+                {me?.email || "—"}
+              </p>
               <input
-                type="email"
-                className="form-control"
-                value={settings.supportEmail || ""}
-                onChange={(e) =>
-                  setSettings((s) => ({ ...s, supportEmail: e.target.value }))
-                }
-                placeholder="support@example.com"
+                ref={fileRef}
+                type="file"
+                accept="image/png,image/jpeg"
+                style={{ display: "none" }}
+                onChange={onPickAvatar}
+                disabled={uploadingAvatar}
               />
-            </div>
-
-            <div className="col-md-4">
-              <label className="form-label">Premium Price</label>
-              <input
-                type="number"
-                className="form-control"
-                value={settings.premiumPrice ?? 10}
-                onChange={(e) =>
-                  setSettings((s) => ({
-                    ...s,
-                    premiumPrice: e.target.value,
-                  }))
-                }
-                min={0}
-              />
-            </div>
-            <div className="col-md-4">
-              <label className="form-label">Currency</label>
-              <label className="form-label">Currency</label>
-              <select
-                className="form-select"
-                value={settings.premiumCurrency || "INR"}
-                onChange={(e) =>
-                  setSettings((s) => ({
-                    ...s,
-                    premiumCurrency: e.target.value,
-                  }))
-                }
+              <button
+                className="ad-btn ad-btn--ghost"
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploadingAvatar}
               >
-                <option value="INR">INR (₹)</option>
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="GBP">GBP (£)</option>
-                <option value="AUD">AUD (A$)</option>
-                <option value="CAD">CAD (C$)</option>
-              </select>
+                {uploadingAvatar ? "Uploading…" : "Change Avatar"}
+              </button>
             </div>
-            <div className="col-md-4">
-              <label className="form-label">Period (months)</label>
-              <input
-                type="number"
-                className="form-control"
-                value={settings.premiumPeriodMonths ?? 12}
-                onChange={(e) =>
-                  setSettings((s) => ({
-                    ...s,
-                    premiumPeriodMonths: e.target.value,
-                  }))
-                }
-                min={1}
-              />
-            </div>
+          </div>
+        </div>
 
-            <div className="col-md-6">
-              <label className="form-label">Auto-flag threshold</label>
-              <input
-                type="number"
-                className="form-control"
-                value={settings.reportAutoFlagThreshold ?? 3}
-                onChange={(e) =>
-                  setSettings((s) => ({
-                    ...s,
-                    reportAutoFlagThreshold: e.target.value,
-                  }))
-                }
-                min={1}
-              />
+        {/* Site Settings */}
+        <form className="ad-card" onSubmit={saveSettings}>
+          <div className="ad-card__head">
+            <div>
+              <h3 className="ad-card__title">Site Settings</h3>
+              <p className="ad-card__hint">General platform configuration</p>
             </div>
-
-            <div className="col-md-6 d-flex align-items-end">
-              <div className="form-check">
+          </div>
+          <div className="ad-card__body">
+            <div className="ad-form-grid">
+              <div className="ad-field" style={{ gridColumn: "span 6" }}>
+                <label className="ad-label">Site Name</label>
                 <input
-                  id="maint"
-                  className="form-check-input"
-                  type="checkbox"
-                  checked={!!settings.maintenanceMode}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      maintenanceMode: e.target.checked,
-                    }))
-                  }
+                  className="ad-input"
+                  value={settings.siteName || ""}
+                  onChange={(e) => setSettings((s) => ({ ...s, siteName: e.target.value }))}
+                  placeholder="Memorise"
                 />
-                <label htmlFor="maint" className="form-check-label ms-2">
-                  Maintenance mode
-                </label>
+              </div>
+              <div className="ad-field" style={{ gridColumn: "span 6" }}>
+                <label className="ad-label">Support Email</label>
+                <input
+                  type="email"
+                  className="ad-input"
+                  value={settings.supportEmail || ""}
+                  onChange={(e) => setSettings((s) => ({ ...s, supportEmail: e.target.value }))}
+                  placeholder="support@example.com"
+                />
+              </div>
+
+              <div className="ad-field" style={{ gridColumn: "span 4" }}>
+                <label className="ad-label">Premium Price</label>
+                <input
+                  type="number"
+                  className="ad-input"
+                  value={settings.premiumPrice ?? 10}
+                  onChange={(e) => setSettings((s) => ({ ...s, premiumPrice: e.target.value }))}
+                  min={0}
+                />
+              </div>
+              <div className="ad-field" style={{ gridColumn: "span 4" }}>
+                <label className="ad-label">Currency</label>
+                <select
+                  className="ad-select"
+                  value={settings.premiumCurrency || "INR"}
+                  onChange={(e) => setSettings((s) => ({ ...s, premiumCurrency: e.target.value }))}
+                >
+                  <option value="INR">INR (₹)</option>
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="GBP">GBP (£)</option>
+                  <option value="AUD">AUD (A$)</option>
+                  <option value="CAD">CAD (C$)</option>
+                </select>
+              </div>
+              <div className="ad-field" style={{ gridColumn: "span 4" }}>
+                <label className="ad-label">Period (months)</label>
+                <input
+                  type="number"
+                  className="ad-input"
+                  value={settings.premiumPeriodMonths ?? 12}
+                  onChange={(e) => setSettings((s) => ({ ...s, premiumPeriodMonths: e.target.value }))}
+                  min={1}
+                />
+              </div>
+
+              <div className="ad-field" style={{ gridColumn: "span 6" }}>
+                <label className="ad-label">Auto-flag threshold</label>
+                <input
+                  type="number"
+                  className="ad-input"
+                  value={settings.reportAutoFlagThreshold ?? 3}
+                  onChange={(e) => setSettings((s) => ({ ...s, reportAutoFlagThreshold: e.target.value }))}
+                  min={1}
+                />
+              </div>
+
+              <div style={{ gridColumn: "span 6", display: "flex", alignItems: "flex-end" }}>
+                <div className="ad-maint">
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 600, fontSize: 14 }}>Maintenance mode</p>
+                    <p style={{ margin: "2px 0 0", fontSize: 12.5, color: "var(--ad-ink-faint)" }}>
+                      Temporarily take the platform offline
+                    </p>
+                  </div>
+                  <label className="ad-switch">
+                    <input
+                      type="checkbox"
+                      checked={!!settings.maintenanceMode}
+                      onChange={(e) => setSettings((s) => ({ ...s, maintenanceMode: e.target.checked }))}
+                    />
+                    <span className="ad-switch__track" />
+                  </label>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <div className="card-footer d-flex justify-content-end">
-          <button className="btn btn-primary" disabled={saving}>
-            {saving ? "Saving…" : "Save Settings"}
-          </button>
-        </div>
-      </form>
+          <div className="ad-card__foot">
+            <button className="ad-btn ad-btn--primary" disabled={saving}>
+              {saving ? "Saving…" : "Save Settings"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

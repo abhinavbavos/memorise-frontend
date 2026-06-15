@@ -1,99 +1,65 @@
 import React from "react";
-import { Dropdown, Spinner } from "react-bootstrap";
-import { SVGICON } from "../../data/constant/theme";
 
-function DropBtnBlog() {
-    return (
-        <Dropdown className="custom-dropdown mb-0">
-            <Dropdown.Toggle
-                className="btn sharp tp-btn dark-btn i-false d-flex align-items-center justify-center"
-                as="div"
-            >
-                {SVGICON.DropDots}
-            </Dropdown.Toggle>
-            <Dropdown.Menu className="dropdown-menu-right" align="end">
-                <Dropdown.Item eventKey="Details">Details</Dropdown.Item>
-                <Dropdown.Item className="text-primary" eventKey="Cancel">
-                    Cancel
-                </Dropdown.Item>
-            </Dropdown.Menu>
-        </Dropdown>
-    );
-}
+const fmtAmount = (s) =>
+  s.amount != null
+    ? Number(s.amount).toLocaleString(undefined, {
+        style: "currency",
+        currency: s.currency || "INR",
+        maximumFractionDigits: 0,
+      })
+    : "—";
 
-const RecentSubscriptionsList = ({ subscriptions, loading, onViewMore }) => {
-    return (
-        <div className="col-xl-6">
-            <div className="card">
-                <div className="card-header border-0 pb-0">
-                    <h3 className="h-title">Recently Subscribed</h3>
-                </div>
-                <div className="card-body px-0 pb-0">
-                    <div className="dz-scroll recent-customer">
-                        {loading ? (
-                            <div className="p-3 text-center">
-                                <Spinner />
-                            </div>
-                        ) : subscriptions.length ? (
-                            subscriptions.map((s) => (
-                                <div key={s._id}>
-                                    <ul className="d-flex custome-list justify-between">
-                                        <div className="d-flex">
-                                            <li>
-                                                <div
-                                                    className="avatar d-flex align-items-center justify-content-center bg-primary text-white"
-                                                    style={{
-                                                        borderRadius: "50%",
-                                                        width: 48,
-                                                        height: 48,
-                                                    }}
-                                                >
-                                                    {(s.userId?.name || "?").slice(0, 1).toUpperCase()}
-                                                </div>
-                                            </li>
-                                            <li className="ms-2">
-                                                <h6 className="mb-0">
-                                                    <span className="text-dark">
-                                                        {s.userId?.name || "User"}
-                                                    </span>
-                                                </h6>
-                                                <p className="mb-0 text-muted small">
-                                                    {s.amount != null
-                                                        ? Number(s.amount).toLocaleString(undefined, {
-                                                            style: "currency",
-                                                            currency: s.currency || "INR",
-                                                        })
-                                                        : "-"}{" "}
-                                                    •{" "}
-                                                    {s.createdAt
-                                                        ? new Date(s.createdAt).toLocaleDateString()
-                                                        : ""}
-                                                </p>
-                                            </li>
-                                        </div>
-                                        <DropBtnBlog />
-                                    </ul>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="p-3 text-muted text-center">
-                                No recent subscriptions
-                            </div>
-                        )}
-                    </div>
-                </div>
-                <div className="card-footer border-0">
-                    <button
-                        type="button"
-                        className="btn btn-primary btn-block mb-2"
-                        onClick={onViewMore}
-                    >
-                        View Subscriptions
-                    </button>
-                </div>
-            </div>
+const RecentSubscriptionsList = ({ subscriptions = [], loading, onViewMore }) => {
+  return (
+    <div className="adash-card">
+      <div className="adash-card__head">
+        <div>
+          <h3 className="adash-card__title">Latest Transactions</h3>
+          <p className="adash-card__hint">Most recent premium purchases</p>
         </div>
-    );
+        <span className="adash-tag">Recent</span>
+      </div>
+
+      <div className="adash-list">
+        {loading ? (
+          <div className="adash-loading">
+            <div className="adash-spinner" />
+          </div>
+        ) : subscriptions.length ? (
+          subscriptions.map((s) => {
+            const name = s.userId?.name || "User";
+            const initial = name.slice(0, 1).toUpperCase();
+            const date = s.createdAt
+              ? new Date(s.createdAt).toLocaleDateString()
+              : "";
+            return (
+              <div key={s._id} className="adash-row">
+                <div className="adash-avatar adash-avatar--initial">
+                  {initial}
+                </div>
+                <div className="adash-row__main">
+                  <p className="adash-row__name">{name}</p>
+                  <p className="adash-row__meta">{date}</p>
+                </div>
+                <div className="adash-row__right">
+                  <span className="adash-amount">{fmtAmount(s)}</span>
+                  <span className="adash-status adash-status--active">Paid</span>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="adash-empty">No recent subscriptions</div>
+        )}
+      </div>
+
+      <div className="adash-card__foot">
+        <button type="button" className="adash-btn" onClick={onViewMore}>
+          View All Transactions
+        </button>
+      </div>
+    </div>
+  );
 };
 
 export default RecentSubscriptionsList;

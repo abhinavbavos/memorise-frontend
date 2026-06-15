@@ -1,7 +1,7 @@
 import { Fragment, useReducer, useState, useEffect } from "react";
 import api from "../../data/api";
 import { Button, Modal, Tab, Nav } from "react-bootstrap";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import profile from "../../assets/images/profile/profile.png";
 import ProfileHeader from "../../components/Data/ProfileHeader";
 import PostList from "../../components/Data/PostList";
@@ -10,6 +10,7 @@ import ProfileSettings from "../../components/Data/ProfileSettings";
 import CameraModal from "../../components/Modals/CameraModal";
 import CreatePostModal from "../../components/Modals/CreatePostModal";
 import { resolveImageUrl } from "../../utils/urlHelpers";
+import { Ic } from "../../components/Data/profileIcons";
 
 const initialState = {
   sendMessage: false,
@@ -445,12 +446,17 @@ function UserPage() {
       country: me?.country || "",
     },
     plan: (me?.plan || "").toLowerCase() === "premium" ? "Premium" : "Basic Plan",
+    memberSince: me?.createdAt
+      ? new Date(me.createdAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })
+      : "",
     info: {
       about: me?.about || "",
       skills: me?.skills || [],
       languages: me?.languages || [],
     },
   };
+
+  const placeText = [user.location.city, user.location.country].filter(Boolean).join(", ");
 
   const trophyCategories = [
     "All",
@@ -482,172 +488,155 @@ function UserPage() {
 
   return (
     <Fragment>
-      <div className="container">
-        {/* Header */}
-        {/* Header */}
-        <ProfileHeader
-          user={user}
-          coverUrl={coverPhotoPreview}
-          avatarUrl={avatarPreview || avatarUrl}
-          onCoverUpload={handleCoverPhotoUploadClick}
-          onAvatarUpload={() => dispatch({ type: "avatarUploadModal" })}
-          onShareProfile={() => dispatch({ type: "shareProfileModal" })}
-          onSubscription={() => dispatch({ type: "subscriptionModal" })}
-        />
+      <div className="pf-shell ad-page">
+        <div className="pf-stack">
+          {/* Header */}
+          <ProfileHeader
+            user={user}
+            coverUrl={coverPhotoPreview}
+            avatarUrl={avatarPreview || avatarUrl}
+            onCoverUpload={handleCoverPhotoUploadClick}
+            onAvatarUpload={() => dispatch({ type: "avatarUploadModal" })}
+            onShareProfile={() => dispatch({ type: "shareProfileModal" })}
+            onSubscription={() => dispatch({ type: "subscriptionModal" })}
+          />
 
-        {/* Tabs */}
-        <div className="row">
-          <div className="col-xl-12">
-            <div className="card">
-              <div className="card-body">
-                <div className="profile-tab">
-                  <div className="custom-tab-1">
-                    <Tab.Container
-                      activeKey={activeTab}
-                      onSelect={onTabSelect}
-                    >
-                      <Nav
-                        as="ul"
-                        className="nav nav-tabs justify-content-center justify-content-md-start"
-                      >
-                        <Nav.Item as="li" className="nav-item">
-                          <Nav.Link to="#my-posts" eventKey="Posts">
-                            Posts
-                          </Nav.Link>
-                        </Nav.Item>
-                        <Nav.Item as="li" className="nav-item">
-                          <Nav.Link to="#my-trophies" eventKey="Trophies">
-                            My Trophies
-                          </Nav.Link>
-                        </Nav.Item>
-                        <Nav.Item as="li" className="nav-item">
-                          <Nav.Link to="#about-me" eventKey="About">
-                            About Me
-                          </Nav.Link>
-                        </Nav.Item>
-                        <Nav.Item as="li" className="nav-item">
-                          <Nav.Link to="#profile-settings" eventKey="Setting">
-                            Settings
-                          </Nav.Link>
-                        </Nav.Item>
-                      </Nav>
-                      <Tab.Content>
-                        {/* Posts */}
-                        <Tab.Pane id="my-posts" eventKey="Posts">
-                          <PostList
-                            user={{ ...user, avatarUrl: avatarPreview || avatarUrl }}
-                            onCameraClick={() => dispatch({ type: "cameraModal" })}
-                            onPostModalClick={() => dispatch({ type: "postModal" })}
-                          />
-                        </Tab.Pane>
-
-                        {/* Trophies */}
-                        <Tab.Pane id="my-trophies" eventKey="Trophies">
-                          <TrophyList
-                            trophies={trophies}
-                            trophyCategories={trophyCategories}
-                            selectedTrophyCategory={selectedTrophyCategory}
-                            setSelectedTrophyCategory={setSelectedTrophyCategory}
-                            onInit={onInit}
-                            onDelete={handleDeleteTrophy}
-                          />
-                        </Tab.Pane>
-
-                        {/* About */}
-                        <Tab.Pane id="about-me" eventKey="About">
-                          <div className="profile-about-me">
-                            <div className="pt-4 border-bottom-1 pb-3">
-                              <h4 className="text-primary">About Me</h4>
-                              <p className="mb-2">{user.info.about}</p>
-                            </div>
-                          </div>
-                          <div className="profile-skills mb-5">
-                            <h4 className="text-primary mb-2">Skills</h4>
-                            {(user.info.skills || []).map((skill, index) => (
-                              <Link
-                                key={index}
-                                to="#"
-                                className="btn btn-primary light btn-xs mb-1 me-1"
-                              >
-                                {skill}
-                              </Link>
-                            ))}
-                          </div>
-                          <div className="profile-lang mb-5">
-                            <h4 className="text-primary mb-2">Language</h4>
-                            {(user.info.languages || []).map(
-                              (language, index) => (
-                                <Link
-                                  key={index}
-                                  className="text-muted pe-3 f-s-16"
-                                >
-                                  {language}
-                                </Link>
-                              )
-                            )}
-                          </div>
-                          <div className="profile-personal-info">
-                            <h4 className="text-primary mb-4">
-                              Personal Information
-                            </h4>
-                            <div className="row mb-2">
-                              <div className="col-3">
-                                <h5 className="f-w-500">
-                                  Name<span className="pull-right">:</span>
-                                </h5>
-                              </div>
-                              <div className="col-9">
-                                <span>{user.name}</span>
-                              </div>
-                            </div>
-                            <div className="row mb-2">
-                              <div className="col-3">
-                                <h5 className="f-w-500">
-                                  Email<span className="pull-right">:</span>
-                                </h5>
-                              </div>
-                              <div className="col-9">
-                                <span>{user.email}</span>
-                              </div>
-                            </div>
-                            <div className="row mb-2">
-                              <div className="col-3">
-                                <h5 className="f-w-500">
-                                  Age<span className="pull-right">:</span>
-                                </h5>
-                              </div>
-                              <div className="col-9">
-                                <span>{user.age}</span>
-                              </div>
-                            </div>
-                            <div className="row mb-2">
-                              <div className="col-3">
-                                <h5 className="f-w-500">
-                                  Location<span className="pull-right">:</span>
-                                </h5>
-                              </div>
-                              <div className="col-9">
-                                <span>
-                                  {user.location.city}, {user.location.country}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </Tab.Pane>
-
-                        {/* Settings */}
-                        <Tab.Pane id="profile-settings" eventKey="Setting">
-                          <ProfileSettings
-                            user={me || {}}
-                            onUpdateProfile={handleUpdateProfile}
-                            onPasswordChange={handlePasswordChange}
-                          />
-                        </Tab.Pane>
-                      </Tab.Content>
-                    </Tab.Container>
-                  </div>
-                </div>
+          {/* KPI strip */}
+          <div className="pf-kpis">
+            <div className="ad-stat">
+              <div className="ad-stat__icon ad-stat__icon--green">{Ic.image}</div>
+              <div className="ad-stat__body">
+                <p className="ad-stat__label">Posts</p>
+                <p className="ad-stat__value">{myPosts.length}</p>
               </div>
+            </div>
+            <div className="ad-stat">
+              <div className="ad-stat__icon ad-stat__icon--amber">{Ic.trophy}</div>
+              <div className="ad-stat__body">
+                <p className="ad-stat__label">Trophies</p>
+                <p className="ad-stat__value">{trophies.length}</p>
+              </div>
+            </div>
+            <div className="ad-stat">
+              <div className="ad-stat__icon ad-stat__icon--violet">{Ic.crown}</div>
+              <div className="ad-stat__body">
+                <p className="ad-stat__label">Plan</p>
+                <p className="ad-stat__value" style={{ fontSize: 20 }}>{user.plan}</p>
+              </div>
+            </div>
+            <div className="ad-stat">
+              <div className="ad-stat__icon ad-stat__icon--blue">{Ic.calendar}</div>
+              <div className="ad-stat__body">
+                <p className="ad-stat__label">Member since</p>
+                <p className="ad-stat__value" style={{ fontSize: 20 }}>{user.memberSince || "—"}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="ad-card">
+            <div className="ad-card__body pf-tabs">
+              <Tab.Container activeKey={activeTab} onSelect={onTabSelect}>
+                <Nav as="ul" className="nav nav-tabs">
+                  <Nav.Item as="li" className="nav-item">
+                    <Nav.Link eventKey="Posts">{Ic.image} Posts</Nav.Link>
+                  </Nav.Item>
+                  <Nav.Item as="li" className="nav-item">
+                    <Nav.Link eventKey="Trophies">{Ic.trophy} Trophies</Nav.Link>
+                  </Nav.Item>
+                  <Nav.Item as="li" className="nav-item">
+                    <Nav.Link eventKey="About">{Ic.user} About</Nav.Link>
+                  </Nav.Item>
+                  <Nav.Item as="li" className="nav-item">
+                    <Nav.Link eventKey="Setting">{Ic.edit} Settings</Nav.Link>
+                  </Nav.Item>
+                </Nav>
+                <Tab.Content>
+                  {/* Posts */}
+                  <Tab.Pane eventKey="Posts">
+                    <PostList
+                      user={{ ...user, avatarUrl: avatarPreview || avatarUrl }}
+                      onCameraClick={() => dispatch({ type: "cameraModal" })}
+                      onPostModalClick={() => dispatch({ type: "postModal" })}
+                    />
+                  </Tab.Pane>
+
+                  {/* Trophies */}
+                  <Tab.Pane eventKey="Trophies">
+                    <TrophyList
+                      trophies={trophies}
+                      trophyCategories={trophyCategories}
+                      selectedTrophyCategory={selectedTrophyCategory}
+                      setSelectedTrophyCategory={setSelectedTrophyCategory}
+                      onInit={onInit}
+                      onDelete={handleDeleteTrophy}
+                    />
+                  </Tab.Pane>
+
+                  {/* About */}
+                  <Tab.Pane eventKey="About">
+                    <div className="pf-section">
+                      <h3 className="pf-section__title">{Ic.user} About Me</h3>
+                      <p className="pf-prose">
+                        {user.info.about || "No information provided yet. Head to Settings to tell people about yourself."}
+                      </p>
+                    </div>
+
+                    {(user.info.skills || []).length > 0 && (
+                      <div className="pf-section">
+                        <h3 className="pf-section__title">{Ic.sparkles} Skills</h3>
+                        <div className="pf-chips">
+                          {user.info.skills.map((skill, index) => (
+                            <span key={index} className="pf-chip">{Ic.check} {skill}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(user.info.languages || []).length > 0 && (
+                      <div className="pf-section">
+                        <h3 className="pf-section__title">{Ic.globe} Languages</h3>
+                        <div className="pf-chips">
+                          {user.info.languages.map((language, index) => (
+                            <span key={index} className="pf-chip pf-chip--lang">{Ic.globe} {language}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="pf-section">
+                      <h3 className="pf-section__title">{Ic.info} Personal Information</h3>
+                      <div className="pf-info">
+                        <div className="pf-info__cell">
+                          <span className="pf-info__k">{Ic.user} Name</span>
+                          <span className="pf-info__v">{user.name || "—"}</span>
+                        </div>
+                        <div className="pf-info__cell">
+                          <span className="pf-info__k">{Ic.mail} Email</span>
+                          <span className="pf-info__v">{user.email || "—"}</span>
+                        </div>
+                        <div className="pf-info__cell">
+                          <span className="pf-info__k">{Ic.user} Age</span>
+                          <span className="pf-info__v">{user.age || "—"}</span>
+                        </div>
+                        <div className="pf-info__cell">
+                          <span className="pf-info__k">{Ic.pin} Location</span>
+                          <span className="pf-info__v">{placeText || "—"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Tab.Pane>
+
+                  {/* Settings */}
+                  <Tab.Pane eventKey="Setting">
+                    <ProfileSettings
+                      user={me || {}}
+                      onUpdateProfile={handleUpdateProfile}
+                      onPasswordChange={handlePasswordChange}
+                    />
+                  </Tab.Pane>
+                </Tab.Content>
+              </Tab.Container>
             </div>
           </div>
         </div>
@@ -661,77 +650,34 @@ function UserPage() {
         centered
         size="lg"
       >
-        <div
-          className="modal-content"
-          style={{ border: "none", borderRadius: "15px", overflow: "hidden" }}
-        >
-          <div
-            className="modal-header text-white text-center"
-            style={{
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              border: "none",
-              padding: "2rem 1.5rem 1rem",
-            }}
-          >
-            <div className="w-100">
-              <h3 className="modal-title mb-2" style={{ fontWeight: "600" }}>
-                🚀 Unlock Premium Features
-              </h3>
-              <p
-                className="mb-0"
-                style={{ opacity: "0.9", fontSize: "1.1rem" }}
-              >
-                Upgrade to Premium and take your profile to the next level!
-              </p>
-            </div>
-            <Button
-              variant=""
-              type="button"
-              className="btn-close btn-close-white"
-              onClick={() => dispatch({ type: "subscriptionModal" })}
-              style={{ position: "absolute", top: "15px", right: "15px" }}
-            ></Button>
+        <div className="ad-modal">
+          <div className="pf-promo">
+            <div className="pf-promo__ico">{Ic.crown}</div>
+            <h3 className="pf-promo__title">Unlock Premium</h3>
+            <p className="pf-promo__sub">
+              Upgrade to Premium and take your profile to the next level — unlimited uploads,
+              a custom cover, and a verified premium badge.
+            </p>
+            <p className="pf-promo__price">$10 / year</p>
           </div>
-          <div className="modal-body p-0">
-            <div
-              className="text-center p-4"
-              style={{
-                backgroundColor: "#f8f9fa",
-                borderTop: "1px solid #dee2e6",
-              }}
-            >
-              <p className="text-muted mb-3">
-                <i className="fa fa-lock me-2"></i>Secure payment • Cancel
-                anytime • 30-day money-back guarantee
-              </p>
-              <div className="d-grid gap-2 d-md-flex justify-content-md-center">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  onClick={handleSubscriptionUpgrade}
-                  disabled={upgrading}
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                    border: "none",
-                    padding: "0.75rem 2rem",
-                    borderRadius: "25px",
-                    fontWeight: "600",
-                  }}
-                >
-                  {upgrading
-                    ? "Upgrading…"
-                    : "🚀 Upgrade to Premium - $10/year"}
-                </Button>
-                <Button
-                  variant="outline-secondary"
-                  size="lg"
-                  onClick={() => dispatch({ type: "subscriptionModal" })}
-                  style={{ padding: "0.75rem 2rem", borderRadius: "25px" }}
-                >
-                  Maybe Later
-                </Button>
-              </div>
+          <div className="ad-modal__body" style={{ textAlign: "center" }}>
+            <p className="ad-card__hint" style={{ marginBottom: 18 }}>
+              Secure payment • Cancel anytime • 30-day money-back guarantee
+            </p>
+            <div className="d-flex gap-2 justify-content-center flex-wrap">
+              <button
+                className="ad-btn ad-btn--primary"
+                onClick={handleSubscriptionUpgrade}
+                disabled={upgrading}
+              >
+                {upgrading ? "Upgrading…" : <>{Ic.crown} Upgrade to Premium</>}
+              </button>
+              <button
+                className="ad-btn ad-btn--ghost"
+                onClick={() => dispatch({ type: "subscriptionModal" })}
+              >
+                Maybe Later
+              </button>
             </div>
           </div>
         </div>

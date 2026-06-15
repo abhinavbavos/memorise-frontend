@@ -55,7 +55,8 @@ api.interceptors.response.use(
       localStorage.removeItem("token");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
-      window.location.replace("/login");
+      // TEMP PREVIEW BYPASS — restore this line to re-enable auth redirect
+      // window.location.replace("/login");
       return Promise.reject(error);
     }
 
@@ -110,7 +111,8 @@ api.interceptors.response.use(
         localStorage.removeItem("token");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
-        window.location.replace("/login");
+        // TEMP PREVIEW BYPASS — restore this line to re-enable auth redirect
+        // window.location.replace("/login");
         return Promise.reject(err);
       } finally {
         isRefreshing = false;

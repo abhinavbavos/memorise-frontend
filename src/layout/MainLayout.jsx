@@ -24,7 +24,7 @@ export const PublicLayout = () => {
     return (
         <div style={{ height: `100vh`, width: `100%` }}>
             <PublicNav />
-            <div className="content-body" style={{ paddingTop: "5rem", overflowY: "auto", height: "calc(100vh - 5rem)" }}>
+            <div className="content-body" style={{ paddingTop: "5rem", overflowY: "auto", height: "100vh" }}>
                 <Outlet />
             </div>
             {/* <Footer /> */}
@@ -37,7 +37,7 @@ export const AdminLayout = () => {
     return (
         <div style={{ height: `100%`, width: `100%` }}>
             <div className="content-body d-flex">
-                <SideBar menuToggle={menuToggle} />
+                <SideBar menuToggle={menuToggle} setMenuToggle={setMenuToggle} />
                 <div className="flex-grow-1" style={{ minWidth: 0 }}>
                     <AdminNav menuToggle={menuToggle} setMenuToggle={setMenuToggle} />
                     <Outlet />

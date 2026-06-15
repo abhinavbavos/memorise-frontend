@@ -1,177 +1,143 @@
-// src/pages/Admin/SideBar.jsx
-import { useState } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
+// src/components/SideBar/SideBar.jsx
+import { useEffect, useRef, useState } from "react";
+import { NavLink, Link } from "react-router-dom";
 import logo from "../../assets/images/memrise.png";
 
-const SideBar = ({ menuToggle }) => {
-  const [activeMenu, setActiveMenu] = useState(null);
-  const [activeSubmenu, setActiveSubmenu] = useState(null);
-  const { pathname } = useLocation();
+// ----- inline icons (stroke-based, crisp) -----
+const Icon = {
+  grid: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" />
+      <rect x="14" y="14" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" />
+    </svg>
+  ),
+  shield: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M9 12l2 2 4-4" />
+    </svg>
+  ),
+  users: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
+  card: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="5" width="20" height="14" rx="2.5" /><path d="M2 10h20M6 15h4" />
+    </svg>
+  ),
+  settings: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  ),
+  spark: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15l-1.9-4.1L5.5 9l4.6-1.4L12 3z" />
+    </svg>
+  ),
+};
 
-  const handleMenuActive = (title) => {
-    setActiveMenu(activeMenu === title ? null : title);
+const NAV = [
+  { section: "Overview" },
+  { to: "/admin", end: true, icon: Icon.grid, label: "Dashboard" },
+  { to: "/admin/content", icon: Icon.shield, label: "Content Moderation" },
+  { to: "/admin/users", icon: Icon.users, label: "User Management" },
+  { to: "/admin/payments", icon: Icon.card, label: "Subscriptions & Payments" },
+  { section: "System" },
+  { to: "/admin/settings", icon: Icon.settings, label: "Settings" },
+];
+
+const COLLAPSE_DELAY = 2000; // ms before the rail collapses after the mouse leaves
+
+const SideBar = ({ menuToggle, setMenuToggle }) => {
+  // Default to the slim icon rail; hover expands it, leaving collapses it again.
+  const [expanded, setExpanded] = useState(false);
+
+  // On mobile the rail becomes an off-canvas drawer toggled by the header
+  // hamburger (menuToggle). Tapping a link or the scrim closes it.
+  const closeDrawer = () => setMenuToggle && setMenuToggle(false);
+  const collapseTimer = useRef(null);
+
+  const clearTimer = () => {
+    if (collapseTimer.current) {
+      clearTimeout(collapseTimer.current);
+      collapseTimer.current = null;
+    }
   };
 
-  const handleSubmenuActive = (title) => {
-    setActiveSubmenu(activeSubmenu === title ? null : title);
+  const handleEnter = () => {
+    clearTimer();
+    setExpanded(true);
   };
 
-  const cn = (...classes) => classes.filter(Boolean).join(" ");
+  const handleLeave = () => {
+    clearTimer();
+    collapseTimer.current = setTimeout(() => setExpanded(false), COLLAPSE_DELAY);
+  };
 
-  // Helpers to determine active route groups
-  const isPath = (prefix) =>
-    pathname === prefix || pathname.startsWith(prefix + "/");
+  // Tidy the pending timer if the sidebar unmounts mid-countdown.
+  useEffect(() => clearTimer, []);
 
   return (
-    <div
-      className="deznav border-right"
-      style={menuToggle ? { display: `none` } : { display: `block` }}
-    >
-      <div className="deznav-scroll">
-        <div className="logo">
-          <Link to="/admin" aria-label="Admin Home">
-            <img src={logo} alt="Memorise Admin" />
-          </Link>
-        </div>
-
-        <ul className="metismenu" id="menu">
-          {/* Dashboard Section */}
-          <li className="menu-title">Dashboard</li>
-
-          <li
-            className={cn(
-              isPath("/admin") && !isPath("/admin/") ? "mm-active" : ""
-            )}
-          >
-            <NavLink
-              to="/admin"
-              end
-              className={({ isActive }) => cn(isActive ? "mm-active" : "")}
-              onClick={() => handleMenuActive("Dashboard")}
-            >
-              <div className="menu-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </div>
-              <span className="nav-text">Dashboard</span>
-            </NavLink>
-          </li>
-
-          {/* Content Moderation */}
-          <li className={cn(isPath("/admin/content") ? "mm-active" : "")}>
-            <NavLink
-              to="/admin/content"
-              className={({ isActive }) => cn(isActive ? "mm-active" : "")}
-              onClick={() => handleMenuActive("Menu Management")}
-            >
-              <div className="menu-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </div>
-              <span className="nav-text">Content Moderation</span>
-            </NavLink>
-          </li>
-
-          {/* User Management */}
-          <li className={cn(isPath("/admin/users") ? "mm-active" : "")}>
-            <NavLink
-              to="/admin/users"
-              className={({ isActive }) => cn(isActive ? "mm-active" : "")}
-              onClick={() => handleMenuActive("Staff")}
-            >
-              <div className="menu-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M16 7c0-2.76-2.24-5-5-5s-5 2.24-5 5 2.24 5 5 5 5-2.24 5-5zM12 14c-3.33 0-10 1.67-10 5v3h20v-3c0-3.33-6.67-5-10-5z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </div>
-              <span className="nav-text">User Management</span>
-            </NavLink>
-            {/* Submenu example
-            <ul
-              className={cn(
-                "submenu",
-                activeMenu === "Staff" ? "show" : "",
-                activeSubmenu === "UserList" ? "active" : ""
-              )}
-              style={{
-                display: activeMenu === "Staff" ? "block" : "none",
-                paddingLeft: "2rem",
-              }}
-            >
-              <li>
-                <NavLink
-                  to="/admin/users/list"
-                  className={({ isActive }) => cn(isActive ? "mm-active" : "")}
-                  onClick={() => handleSubmenuActive("UserList")}
-                >
-                  User List
-                </NavLink>
-              </li>
-              <li>
-                <NavLink
-                  to="/admin/users/add"
-                  className={({ isActive }) => cn(isActive ? "mm-active" : "")}
-                  onClick={() => handleSubmenuActive("AddUser")}
-                >
-                  Add User
-                </NavLink>
-              </li>
-            </ul> */}
-          </li>
-
-          {/* Subscriptions & Payments */}
-          <li className={cn(isPath("/admin/payments") ? "mm-active" : "")}>
-            <NavLink
-              to="/admin/payments"
-              className={({ isActive }) => cn(isActive ? "mm-active" : "")}
-              onClick={() => handleMenuActive("Payments")}
-            >
-              <div className="menu-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </div>
-              <span className="nav-text">Subscriptions & Payments</span>
-            </NavLink>
-          </li>
-
-          {/* Settings */}
-          <li className="menu-title">Settings</li>
-
-          <li className={cn(isPath("/admin/settings") ? "mm-active" : "")}>
-            <NavLink
-              to="/admin/settings"
-              className={({ isActive }) => cn(isActive ? "mm-active" : "")}
-              onClick={() => handleMenuActive("Settings")}
-            >
-              <div className="menu-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </div>
-              <span className="nav-text">Settings</span>
-            </NavLink>
-          </li>
-        </ul>
+    <>
+      {/* In-flow spacer reserves the slim rail's footprint so the expanded
+          rail can overlay the page without shoving the content sideways. */}
+      <div className="ad-side__slot" aria-hidden="true" />
+      <aside
+        className={`ad-side ${expanded ? "ad-side--expanded" : "ad-side--collapsed"} ${
+          menuToggle ? "ad-side--open" : ""
+        }`}
+        onMouseEnter={handleEnter}
+        onMouseLeave={handleLeave}
+      >
+      <div className="ad-side__brand">
+        <Link to="/admin" aria-label="Admin home" className="ad-side__brandlink">
+          <img src={logo} alt="Memorise" className="ad-side__logo" />
+        </Link>
       </div>
-    </div>
+
+      <nav className="ad-side__nav">
+        {NAV.map((item, i) =>
+          item.section ? (
+            <p key={`s-${i}`} className="ad-side__label">{item.section}</p>
+          ) : (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              title={item.label}
+              onClick={closeDrawer}
+              className={({ isActive }) =>
+                `ad-side__link ${isActive ? "ad-side__link--active" : ""}`
+              }
+            >
+              <span className="ad-side__ico">{item.icon}</span>
+              <span className="ad-side__text">{item.label}</span>
+            </NavLink>
+          )
+        )}
+      </nav>
+
+      <div className="ad-side__foot">
+        <div className="ad-side__promo">
+          <span className="ad-side__promo-ico">{Icon.spark}</span>
+          <div>
+            <p className="ad-side__promo-title">Memorise Admin</p>
+            <p className="ad-side__promo-sub">Premium console</p>
+          </div>
+        </div>
+      </div>
+      </aside>
+      {/* Tap-to-close scrim — only visible while the mobile drawer is open. */}
+      <div
+        className={`ad-side__scrim ${menuToggle ? "ad-side__scrim--show" : ""}`}
+        onClick={closeDrawer}
+        aria-hidden="true"
+      />
+    </>
   );
 };
 
